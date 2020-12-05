@@ -1,35 +1,24 @@
 import sequtils
 import strscans
+import utils
 
-var the_lines = newSeq[string]()
-var line: string
-while readLine(stdin, line):
-  the_lines.add(line)
+proc is_valid1(line: string): bool =
+  var min_count, max_count: int
+  var character, password: string
 
-proc part1(the_lines: seq[string]) =
-  var valid_count = 0
-  for line in the_lines:
-    var min_count, max_count: int
-    var character, password: string
+  if scanf(line, "$i-$i $w: $+$.", min_count, max_count, character, password):
+    let count = toSeq(password.items).filterIt(it == character[0]).len
+    return min_count <= count and count <= max_count
+  return false
 
-    if scanf(line, "$i-$i $w: $+$.", min_count, max_count, character, password):
-      let count = filter(toSeq(password.items), proc(c: char): bool = c == character[0]).len
-      if min_count <= count and count <= max_count:
-        valid_count += 1
+proc is_valid2(line: string): bool =
+  var i, j: int
+  var character, password: string
 
-  echo valid_count
+  if scanf(line, "$i-$i $w: $+$.", i, j, character, password):
+    return password[i - 1] == character[0] xor password[j - 1] == character[0]
+  return false
 
-proc part2(the_lines: seq[string]) =
-  var valid_count = 0
-  for line in the_lines:
-    var i, j: int
-    var character, password: string
-
-    if scanf(line, "$i-$i $w: $+$.", i, j, character, password):
-      if password[i - 1] == character[0] xor password[j - 1] == character[0]:
-        valid_count += 1
-
-  echo valid_count
-
-part1(the_lines)
-part2(the_lines)
+let lines = get_lines()
+echo lines.map(is_valid1).count(true)
+echo lines.map(is_valid2).count(true)

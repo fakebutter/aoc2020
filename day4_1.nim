@@ -3,21 +3,20 @@ import strutils
 import tables
 import strscans
 import re
-
-var the_lines = newSeq[string]()
-var line: string
-while readLine(stdin, line):
-  the_lines.add(line)
+import utils
 
 proc get_passports(the_lines: seq[string]): seq[string] =
-  var passports = newSeq[string]()
-  var current = newSeq[string]()
+  var
+    passports = newSeq[string]()
+    current = newSeq[string]()
+
   for line in the_lines:
     if line != "":
       current.add(line)
     else:
       passports.add(current.join(" "))
       current = newSeq[string]()
+
   passports.add(current.join(" "))
   return passports
 
@@ -60,15 +59,14 @@ proc check_passport(passport: string, validate_field: bool): bool =
       if seen.hasKey(kv[0]) and (not validate_field or is_valid_field(kv[0], kv[1])):
         seen[kv[0]] = true
 
-  return mapIt(toSeq(seen.values), if it: 1 else: 0).foldl(a + b) == 7
+  return toSeq(seen.values).count(true) == 7
 
-proc main(validate_field: bool) =
-  let passports = get_passports(the_lines)
-  echo passports.mapIt(if check_passport(it, validate_field): 1 else: 0)
+proc main(passports: seq[string], validate_field: bool) =
+  echo passports
+    .mapIt(if check_passport(it, validate_field): 1 else: 0)
     .foldl(a + b)
 
-# part 1
-main(false)
+let passports = get_passports(get_lines())
 
-# part 2
-main(true)
+main(passports, false)
+main(passports, true)
