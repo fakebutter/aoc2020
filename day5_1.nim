@@ -3,30 +3,23 @@ import algorithm
 import sequtils
 import math
 
-proc get_seat(line: string): int =
+proc bsearch(low: int, high: int, instr: string): int =
   var
-    row_low = 0
-    row_high = 127
-    col_low = 0
-    col_high = 7
-
-  for c in line[0..<7].items:
-    let mid = float(row_low + row_high) / 2.0
-    if c == 'F':
-      row_high = floor(mid).int
+    high = high
+    low = low
+  for c in instr.items:
+    let mid = float(low + high) / 2.0
+    if c == 'F' or c == 'L':
+      high = floor(mid).int
     else:
-      row_low = ceil(mid).int
+      low = ceil(mid).int
+  assert(low == high)
+  return low
 
-  for c in line[7..<10].items:
-    let mid = float(col_low + col_high) / 2.0
-    if c == 'L':
-      col_high = floor(mid).int
-    else:
-      col_low = ceil(mid).int
-
-  assert(row_low == row_high)
-  assert(col_low == col_high)
-  return row_low * 8 + col_low
+proc get_seat(line: string): int =
+  let row = bsearch(0, 127, line[0..<7])
+  let col = bsearch(0, 7, line[7..<10])
+  return row * 8 + col
 
 proc find_gaps(seats: seq[int]): seq[int] =
   var prev = -1
