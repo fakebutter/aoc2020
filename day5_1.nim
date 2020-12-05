@@ -1,7 +1,7 @@
-import utils
 import algorithm
-import sequtils
 import math
+import sequtils
+import utils
 
 proc bsearch(low: int, high: int, instr: string): int =
   var
@@ -9,7 +9,7 @@ proc bsearch(low: int, high: int, instr: string): int =
     low = low
   for c in instr.items:
     let mid = float(low + high) / 2.0
-    if c == 'F' or c == 'L':
+    if c in ['F', 'L']:
       high = floor(mid).int
     else:
       low = ceil(mid).int
@@ -17,8 +17,9 @@ proc bsearch(low: int, high: int, instr: string): int =
   return low
 
 proc get_seat(line: string): int =
-  let row = bsearch(0, 127, line[0..<7])
-  let col = bsearch(0, 7, line[7..<10])
+  let
+    row = bsearch(0, 127, line[0..<7])
+    col = bsearch(0, 7, line[7..<10])
   return row * 8 + col
 
 proc find_gaps(seats: seq[int]): seq[int] =
@@ -32,6 +33,5 @@ proc find_gaps(seats: seq[int]): seq[int] =
 
 let seats = get_lines().map(get_seat)
 echo max(seats)
-
-echo(min(seats), " ", max(seats))
+echo(min(seats), "->", max(seats))
 echo find_gaps(sorted(seats, system.cmp[int]))

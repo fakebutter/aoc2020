@@ -24,9 +24,11 @@ proc count_trees(map: seq[seq[char]], steps: (int, int)): int =
 
   return tree_count
 
+proc run(map: seq[seq[char]], steps: seq[(int, int)]) =
+  echo steps
+    .mapIt(count_trees(map, it))
+    .foldl(a * b)
+
 let map = make_map(get_lines())
-echo @[
-    (1, 1), (1, 3), (1, 5), (1, 7), (2, 1)
-  ]
-  .mapIt(count_trees(map, it))
-  .foldl(a * b)
+run(map, @[(1, 3)])
+run(map, @[(1, 1), (1, 3), (1, 5), (1, 7), (2, 1)])
