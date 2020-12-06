@@ -14,13 +14,12 @@ iterator part1(groups: seq[seq[string]]): int =
 
 iterator part2(groups: seq[seq[string]]): int =
   for group in groups:
-    var count = newTable[char, int]()
+    var counter = newCountTable[char]()
     for answer in group:
       for c in answer.items:
-        count[c] = count.getOrDefault(c, 0) + 1
+        counter.inc(c)
 
-    let size = group.len
-    yield toSeq(count.values).filterIt(it == size).len
+    yield toSeq(counter.values).count(group.len)
 
 let groups = get_lines().chunkify((l) => l == "")
 echo toSeq(part1(groups)).sum

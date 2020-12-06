@@ -23,3 +23,6 @@ proc chunkify*[T](items: seq[T], is_delim: (T) -> bool): seq[seq[T]] =
 
 proc sum*[T](items: seq[T]): T =
   items.foldl(a + b)
+
+proc product*[T](items: seq[T]): T =
+  items.foldl(a * b)

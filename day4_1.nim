@@ -41,10 +41,10 @@ proc check_passport(passport: string, validate_field: bool): bool =
 
   return toSeq(seen.values).count(true) == 7
 
-proc run(passports: seq[string], validate_field: bool) =
-  echo passports
+proc run(passports: seq[string], validate_field: bool): int =
+  return passports
     .countIt(check_passport(it, validate_field))
 
 let passports = get_passports(get_lines())
-run(passports, false)
-run(passports, true)
+echo run(passports, false)
+echo run(passports, true)

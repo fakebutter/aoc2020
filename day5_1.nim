@@ -2,6 +2,7 @@ import algorithm
 import math
 import sequtils
 import utils
+import itertools
 
 proc bsearch(low: int, high: int, instr: string): int =
   var
@@ -23,13 +24,10 @@ proc get_seat(line: string): int =
   return row * 8 + col
 
 proc find_gaps(seats: seq[int]): seq[int] =
-  var prev = -1
-  for seat in seats:
-    if prev != -1:
-      if seat > prev + 1:
-        for i in prev+1..<seat:
-          result.add(i)
-    prev = seat
+  for pair in seats.windowed(2):
+    if pair[0] + 1 != pair[1]:
+      for i in pair[0]+1..<pair[1]:
+        result.add(i)
 
 let seats = get_lines().map(get_seat)
 echo max(seats)
