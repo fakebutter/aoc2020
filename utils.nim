@@ -1,3 +1,4 @@
+import sequtils
 import sugar
 
 proc get_lines*(): seq[string] =
@@ -19,3 +20,6 @@ proc chunkify*[T](items: seq[T], is_delim: (T) -> bool): seq[seq[T]] =
 
   if chunk.len > 0:
     result.add(chunk)
+
+proc sum*[T](items: seq[T]): T =
+  items.foldl(a + b)
