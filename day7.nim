@@ -1,4 +1,6 @@
 import re
+import sequtils
+import sets
 import strutils
 import tables
 import utils
@@ -19,39 +21,29 @@ type
   Graph = ref object
     nodes: TableRef[string, Node]
 
+proc parse_inner(str: string): InnerBag =
+  var parts: array[2, string]
+  if str.match(re"\s*(\d+) (.+) bags?\.?$", parts):
+    return (count: parseInt(parts[0]), color: parts[1])
+
 proc parse(lines: seq[string]): seq[OuterBag] =
-  var conns = newSeq[OuterBag]()
-
   for line in lines:
-    var args: array[2, string]
-    if line.match(re"(.*) bags contain (.*)", args):
-      var inner = newSeq[(int, string)]()
-      for part in args[1].split(","):
-        var parts: array[2, string]
-        if part.match(re"\s*(\d+) (.+) bags?\.?$", parts):
-          inner.add((count: parseInt(parts[0]), color: parts[1]))
-
-      conns.add((color: args[0], inner: inner))
-
-  return conns
+    var parts: array[2, string]
+    if line.match(re"(.*) bags contain (.*)", parts):
+      result.add((color: parts[0], inner: parts[1].split(",").map(parse_inner)))
 
 proc newGraph(): Graph =
-  var graph: Graph
-  new(graph)
-  graph.nodes = newTable[string, Node]()
-  return graph
+  new(result)
+  result.nodes = newTable[string, Node]()
 
 proc newNode(color: string): Node =
-  var node: Node
-  new(node)
-  node.color = color
-  node.children = newSeq[(int, Node)]()
-  return node
+  new(result)
+  result.color = color
+  result.children = newSeq[(int, Node)]()
 
 proc getNode(graph: Graph, color: string): Node =
   if color notin graph.nodes:
-    let node = newNode(color)
-    graph.nodes[color] = node
+    graph.nodes[color] = newNode(color)
   return graph.nodes[color]
 
 proc connect(graph: Graph, from_color: string, to_color: string, count: int) =
@@ -77,30 +69,32 @@ proc build_graph_part2(conns: seq[OuterBag]): Graph =
 
   return graph
 
-proc dfs_part1(graph: Graph, node: Node) =
+proc dfs_part1(graph: Graph, node: Node, visited: var HashSet[string]) =
   for (_, child) in node.children:
-    echo child.color
-    dfs_part1(graph, child)
+    visited.incl(child.color)
+    dfs_part1(graph, child, visited)
 
 proc crawl_part1(graph: Graph) =
   let root = graph.getNode("shiny gold")
-  dfs_part1(graph, root)
+  var visited: HashSet[string]
+  dfs_part1(graph, root, visited)
+  echo visited.len
 
-proc dfs_part2(graph: Graph, node: Node, mult: int) =
+proc dfs_part2(graph: Graph, node: Node, total: int): int =
+  var sum = total
   for (count, child) in node.children:
-    echo mult * count
-    dfs_part2(graph, child, mult * count)
+    sum += total * dfs_part2(graph, child, count)
+  return sum
 
 proc crawl_part2(graph: Graph) =
   let root = graph.getNode("shiny gold")
-  dfs_part2(graph, root, 1)
+  # Exclude shiny gold itself.
+  echo dfs_part2(graph, root, 1) - 1
 
 let lines = get_lines()
 
-# Pipe into: | sort | uniq | wc -l
 let graph1 = build_graph_part1(parse(lines))
-#crawl_part1(graph1)
+crawl_part1(graph1)
 
-# Pipe into: | awk '{sum+=$1}END{printf("%d\n",sum)}'
 let graph2 = build_graph_part2(parse(lines))
 crawl_part2(graph2)
