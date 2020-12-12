@@ -12,9 +12,21 @@ type
   Coord = tuple
     x, y: int
   Ship = ref object
-    x, y: int
+    pos: Coord
     facing: Dir
     wp: Coord
+
+let degToDir = {0: N, 90: E, 180: S, 270: W, -90: W, -180: S, -270: E}.toTable
+let dirToDeg = {N: 0, S: 180, E: 90, W: 270}.toTable
+let translation = {N: (0, -1), S: (0, 1), E: (1, 0), W: (-1, 0)}.toTable
+let dirEnum = {'N': N, 'S': S, 'E': E, 'W': W}.toTable
+
+proc `+=`(lhs: var Coord, rhs: Coord) =
+  lhs.x += rhs.x
+  lhs.y += rhs.y
+
+proc `*`(lhs: Coord, rhs: int): Coord =
+  (lhs.x * rhs, lhs.y * rhs)
 
 # (0 -1)
 # (1  0)
@@ -28,82 +40,38 @@ proc rotateCcw90(c: Coord): Coord =
 
 proc newShip(): Ship =
   new(result)
-  result.x = 0
-  result.y = 0
+  result.pos = (0, 0)
   result.facing = E
   result.wp = (10, -1)
 
-proc facingDir(ship: Ship): int =
-  {N: 0, S: 180, E: 90, W: 270}.toTable[ship.facing]
+proc facingDeg(ship: Ship): int =
+  dirToDeg[ship.facing]
 
 proc forward(ship: var Ship, dist: int) =
-  case ship.facing:
-    of N:
-      ship.y -= dist
-    of S:
-      ship.y += dist
-    of E:
-      ship.x += dist
-    of W:
-      ship.x -= dist
+  ship.pos += translation[ship.facing] * dist
 
 proc translate(ship: var Ship, dir: Dir, dist: int) =
-  case dir
-    of N:
-      ship.y -= dist
-    of S:
-      ship.y += dist
-    of E:
-      ship.x += dist
-    of W:
-      ship.x -= dist
+  ship.pos += translation[dir] * dist
 
 proc translateWp(ship: var Ship, dir: Dir, dist: int) =
-  case dir
-    of N:
-      ship.wp.y -= dist
-    of S:
-      ship.wp.y += dist
-    of E:
-      ship.wp.x += dist
-    of W:
-      ship.wp.x -= dist
+  ship.wp += translation[dir] * dist
 
 proc moveToWp(ship: var Ship, dist: int) =
-  ship.x += ship.wp.x * dist
-  ship.y += ship.wp.y * dist
+  ship.pos += ship.wp * dist
 
 proc rotateWp(ship: var Ship, deg: int) =
   # I'm clearly very lazy.
-  case deg:
-    of 90:
+  if deg > 0:
+    for i in 0..<int(deg/90):
       ship.wp = ship.wp.rotateCw90
-    of 180:
-      ship.wp = ship.wp.rotateCw90
-      ship.wp = ship.wp.rotateCw90
-    of 270:
-      ship.wp = ship.wp.rotateCw90
-      ship.wp = ship.wp.rotateCw90
-      ship.wp = ship.wp.rotateCw90
-    of -90:
+  else:
+    for i in 0..<int(abs(deg)/90):
       ship.wp = ship.wp.rotateCcw90
-    of -180:
-      ship.wp = ship.wp.rotateCcw90
-      ship.wp = ship.wp.rotateCcw90
-    of -270:
-      ship.wp = ship.wp.rotateCcw90
-      ship.wp = ship.wp.rotateCcw90
-      ship.wp = ship.wp.rotateCcw90
-    else:
-      assert(false, "Bad waypoint turn deg: " & $(deg))
 
 proc turn(ship: var Ship, deg: int) =
-  let cur = ship.facingDir + deg
-  ship.facing = {0: N, 90: E, 180: S, 270: W, -90: W, -180: S, -270: E}.toTable[cur mod 360]
+  ship.facing = degToDir[(ship.facingDeg + deg) mod 360]
 
 ####################################################################################################
-
-let dirEnum = {'N': N, 'S': S, 'E': E, 'W': W}.toTable
 
 proc parse_instr(line: string): Instr =
   result.op = line[0]
@@ -114,10 +82,8 @@ proc part1(ship: var Ship, instrs: seq[Instr]) =
     case instr.op:
       of 'N', 'S', 'E', 'W':
         ship.translate(dirEnum[instr.op], instr.val)
-      of 'L':
-        ship.turn(-instr.val)
-      of 'R':
-        ship.turn(instr.val)
+      of 'R', 'L':
+        ship.turn(if instr.op == 'L': -instr.val else: instr.val)
       of 'F':
         ship.forward(instr.val)
       else:
@@ -128,10 +94,8 @@ proc part2(ship: var Ship, instrs: seq[Instr]) =
     case instr.op:
       of 'N', 'S', 'E', 'W':
         ship.translateWp(dirEnum[instr.op], instr.val)
-      of 'L':
-        ship.rotateWp(-instr.val)
-      of 'R':
-        ship.rotateWp(instr.val)
+      of 'L', 'R':
+        ship.rotateWp(if instr.op == 'L': -instr.val else: instr.val)
       of 'F':
         ship.moveToWp(instr.val)
       else:
@@ -140,8 +104,8 @@ proc part2(ship: var Ship, instrs: seq[Instr]) =
 let instrs = get_lines().map(parse_instr)
 var ship = newShip()
 part1(ship, instrs)
-echo abs(ship.x) + abs(ship.y)
+echo abs(ship.pos.x) + abs(ship.pos.y)
 
 ship = newShip()
 part2(ship, instrs)
-echo abs(ship.x) + abs(ship.y)
+echo abs(ship.pos.x) + abs(ship.pos.y)

@@ -49,7 +49,7 @@ proc newMap(lines: seq[string]): Map =
 
 # Part 1
 
-proc get_adjacent_occupied(map: Map, pos: Pair): int =
+proc count_adjacent_occupied(map: Map, pos: Pair): int =
   for delta in [
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
@@ -60,28 +60,28 @@ proc get_adjacent_occupied(map: Map, pos: Pair): int =
       result += 1
 
 proc can_occupy1(map: Map, pos: Pair): bool =
-  return get_adjacent_occupied(map, pos) == 0
+  return count_adjacent_occupied(map, pos) == 0
 
 proc can_vacate1(map: Map, pos: Pair): bool =
-  return get_adjacent_occupied(map, pos) >= 4
+  return count_adjacent_occupied(map, pos) >= 4
 
 ################################################################################
 
 # Part 2
 
 proc has_visible_occupied(map: Map, pos: Pair, dir: Pair): bool =
-  var pos = pos + dir
+  var cur = pos + dir
 
-  while map.valid(pos):
-    if map[pos] == '#':
+  while map.valid(cur):
+    if map[cur] == '#':
       return true
-    elif map[pos] == 'L':
+    elif map[cur] == 'L':
       return false
-    pos = pos + dir
+    cur = cur + dir
 
   return false
 
-proc get_visible_occupied(map: Map, pos: Pair): int =
+proc count_visible_occupied(map: Map, pos: Pair): int =
   @[
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
@@ -89,10 +89,10 @@ proc get_visible_occupied(map: Map, pos: Pair): int =
   ].mapIt(has_visible_occupied(map, pos, it)).count(true)
 
 proc can_occupy2(map: Map, pos: Pair): bool =
-  return get_visible_occupied(map, pos) == 0
+  return count_visible_occupied(map, pos) == 0
 
 proc can_vacate2(map: Map, pos: Pair): bool =
-  return get_visible_occupied(map, pos) >= 5
+  return count_visible_occupied(map, pos) >= 5
 
 ################################################################################
 
