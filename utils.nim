@@ -2,24 +2,24 @@ import sequtils
 import sugar
 
 proc get_lines*(): seq[string] =
-  var lines = newSeq[string]()
+  result = newSeq[string]()
   var line: string
   while readLine(stdin, line):
-    lines.add(line)
-  return lines
+    result.add(line)
+  return result
 
-proc chunkify*[T](items: seq[T], is_delim: (T) -> bool): seq[seq[T]] =
-  var chunk = newSeq[T]()
+iterator split*[T](items: seq[T], is_delim: (T) -> bool): seq[T] =
+  var cur = newSeq[T]()
   for item in items:
     if is_delim(item):
-      if chunk.len > 0:
-        result.add(chunk)
-        chunk = @[]
+      if cur.len > 0:
+        yield cur
+        cur = @[]
     else:
-      chunk.add(item)
+      cur.add(item)
 
-  if chunk.len > 0:
-    result.add(chunk)
+  if cur.len > 0:
+    yield cur
 
 proc sum*[T](items: seq[T]): T =
   items.foldl(a + b)

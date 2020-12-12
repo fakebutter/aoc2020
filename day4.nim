@@ -7,7 +7,7 @@ import tables
 import utils
 
 proc get_passports(lines: seq[string]): seq[string] =
-  return lines.chunkify((l) => l == "").mapIt(it.join(" "))
+  return toSeq(lines.split((l) => l == "")).mapIt(it.join(" "))
 
 proc is_valid_field(key: string, value: string): bool =
   case key:

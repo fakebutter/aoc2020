@@ -21,6 +21,6 @@ iterator part2(groups: seq[seq[string]]): int =
 
     yield toSeq(counter.values).count(group.len)
 
-let groups = get_lines().chunkify((l) => l == "")
+let groups = toSeq(get_lines().split((l) => l == ""))
 echo toSeq(part1(groups)).sum
 echo toSeq(part2(groups)).sum

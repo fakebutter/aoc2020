@@ -1,6 +1,7 @@
 import utils
 import sequtils
 import algorithm
+import sugar
 
 type
   Pair = tuple
@@ -10,10 +11,9 @@ type
     width, height: int
 
 proc `+`(lhs: Pair, rhs: Pair): Pair =
-  var lhs = lhs
-  lhs.r += rhs.r
-  lhs.c += rhs.c
-  return lhs
+  result = lhs
+  result.r += rhs.r
+  result.c += rhs.c
 
 proc `[]`(map: Map, pos: Pair): char =
   map.map[pos.r][pos.c]
@@ -22,10 +22,11 @@ proc `[]=`(map: var Map, pos: Pair, seat: char) =
   map.map[pos.r][pos.c] = seat
 
 proc count(map: Map, c: char): int =
-  map.map.mapIt(it.mapIt(if it == c: 1 else: 0)).concat.sum
+  map.map.mapIt(it.mapIt(it == c)).concat.count(true)
 
 proc valid(map: Map, pos: Pair): bool =
-  pos.r >= 0 and pos.r < map.height and pos.c >= 0 and pos.c < map.width
+  pos.r >= 0 and pos.r < map.height and
+    pos.c >= 0 and pos.c < map.width
 
 iterator iter(map: Map): (Pair, char) =
   for (r, row) in map.map.pairs:
@@ -33,10 +34,9 @@ iterator iter(map: Map): (Pair, char) =
       yield ((r, c), seat)
 
 proc sig(map: var Map): seq[Pair] =
-  for (r, row) in map.map.pairs:
-    for (c, seat) in row.pairs:
-      if seat == '#':
-        result.add((r, c))
+  for (pos, seat) in map.iter:
+    if seat == '#':
+      result.add(pos)
   result.sort()
 
 proc newMap(lines: seq[string]): Map =
@@ -49,7 +49,7 @@ proc newMap(lines: seq[string]): Map =
 
 # Part 1
 
-proc get_adjacent_occupied(map: var Map, pos: Pair): int =
+proc get_adjacent_occupied(map: Map, pos: Pair): int =
   for delta in [
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
@@ -59,39 +59,19 @@ proc get_adjacent_occupied(map: var Map, pos: Pair): int =
     if map.valid(cur) and map[cur] == '#':
       result += 1
 
-proc can_occupy1(map: var Map, pos: Pair): bool =
+proc can_occupy1(map: Map, pos: Pair): bool =
   return get_adjacent_occupied(map, pos) == 0
 
-proc can_vacate1(map: var Map, pos: Pair): bool =
+proc can_vacate1(map: Map, pos: Pair): bool =
   return get_adjacent_occupied(map, pos) >= 4
-
-proc step1(map: var Map): bool =
-  var
-    to_occupy, to_vacate = newSeq[Pair]()
-  let sig_before = map.sig
-
-  for (pos, seat) in map.iter:
-    if seat in ['#', 'L']:
-      if can_occupy1(map, pos):
-        to_occupy.add(pos)
-      elif can_vacate1(map, pos):
-        to_vacate.add(pos)
-
-  for pos in to_occupy:
-    map[pos] = '#'
-  for pos in to_vacate:
-    map[pos] = 'L'
-
-  return sig_before != map.sig
 
 ################################################################################
 
 # Part 2
 
-proc has_visible_occupied(map: var Map, pos: Pair, dir: Pair): bool =
-  var pos = pos
+proc has_visible_occupied(map: Map, pos: Pair, dir: Pair): bool =
+  var pos = pos + dir
 
-  pos = pos + dir
   while map.valid(pos):
     if map[pos] == '#':
       return true
@@ -101,31 +81,34 @@ proc has_visible_occupied(map: var Map, pos: Pair, dir: Pair): bool =
 
   return false
 
-proc get_visible_occupied(map: var Map, pos: Pair): int =
-  for dir in [
+proc get_visible_occupied(map: Map, pos: Pair): int =
+  @[
     (-1, -1), (-1, 0), (-1, 1),
     (0, -1), (0, 1),
     (1, -1), (1, 0), (1, 1)
-  ]:
-    if has_visible_occupied(map, pos, dir):
-      result += 1
+  ].mapIt(has_visible_occupied(map, pos, it)).count(true)
 
-proc can_occupy2(map: var Map, pos: Pair): bool =
+proc can_occupy2(map: Map, pos: Pair): bool =
   return get_visible_occupied(map, pos) == 0
 
-proc can_vacate2(map: var Map, pos: Pair): bool =
+proc can_vacate2(map: Map, pos: Pair): bool =
   return get_visible_occupied(map, pos) >= 5
 
-proc step2(map: var Map): bool =
+################################################################################
+
+type
+  SeatPred = (m: Map, s: Pair) -> bool
+
+proc step(map: var Map, can_occupy: SeatPred, can_vacate: SeatPred): bool =
   var
     to_occupy, to_vacate = newSeq[Pair]()
   let sig_before = map.sig
 
   for (pos, seat) in map.iter:
     if seat in ['#', 'L']:
-      if can_occupy2(map, pos):
+      if can_occupy(map, pos):
         to_occupy.add(pos)
-      elif can_vacate2(map, pos):
+      elif can_vacate(map, pos):
         to_vacate.add(pos)
 
   for pos in to_occupy:
@@ -135,16 +118,14 @@ proc step2(map: var Map): bool =
 
   return sig_before != map.sig
 
-################################################################################
-
 let lines = get_lines()
 
 var map = newMap(lines)
-while step1(map):
+while step(map, can_occupy1, can_vacate1):
   discard
 echo map.count('#')
 
 map = newMap(lines)
-while step2(map):
+while step(map, can_occupy2, can_vacate2):
   discard
 echo map.count('#')
