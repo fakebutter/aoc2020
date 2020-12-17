@@ -2,10 +2,9 @@ import utils
 import strutils
 import sequtils
 import tables
+import strformat
 
 type
-  Dir = enum
-    N, S, E, W
   Instr = tuple
     op: char
     val: int
@@ -13,13 +12,12 @@ type
     x, y: int
   Ship = ref object
     pos: Coord
-    facing: Dir
+    facing: char
     wp: Coord
 
-let degToDir = {0: N, 90: E, 180: S, 270: W, -90: W, -180: S, -270: E}.toTable
-let dirToDeg = {N: 0, S: 180, E: 90, W: 270}.toTable
-let translation = {N: (0, -1), S: (0, 1), E: (1, 0), W: (-1, 0)}.toTable
-let dirEnum = {'N': N, 'S': S, 'E': E, 'W': W}.toTable
+let degToDir = {0: 'N', 90: 'E', 180: 'S', 270: 'W', -90: 'W', -180: 'S', -270: 'E'}.toTable
+let dirToDeg = {'N': 0, 'S': 180, 'E': 90, 'W': 270}.toTable
+let translation = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}.toTable
 
 proc `+=`(lhs: var Coord, rhs: Coord) =
   lhs.x += rhs.x
@@ -41,7 +39,7 @@ proc rotateCcw90(c: Coord): Coord =
 proc newShip(): Ship =
   new(result)
   result.pos = (0, 0)
-  result.facing = E
+  result.facing = 'E'
   result.wp = (10, -1)
 
 proc facingDeg(ship: Ship): int =
@@ -50,10 +48,10 @@ proc facingDeg(ship: Ship): int =
 proc forward(ship: var Ship, dist: int) =
   ship.pos += translation[ship.facing] * dist
 
-proc translate(ship: var Ship, dir: Dir, dist: int) =
+proc translate(ship: var Ship, dir: char, dist: int) =
   ship.pos += translation[dir] * dist
 
-proc translateWp(ship: var Ship, dir: Dir, dist: int) =
+proc translateWp(ship: var Ship, dir: char, dist: int) =
   ship.wp += translation[dir] * dist
 
 proc moveToWp(ship: var Ship, dist: int) =
@@ -73,33 +71,32 @@ proc turn(ship: var Ship, deg: int) =
 
 ####################################################################################################
 
-proc parse_instr(line: string): Instr =
-  result.op = line[0]
-  result.val = parseInt(line[1..^1])
+proc parse_instr(line: string): (char, int) =
+  (line[0], parseInt(line[1..^1]))
 
 proc part1(ship: var Ship, instrs: seq[Instr]) =
-  for instr in instrs:
-    case instr.op:
+  for (op, val) in instrs:
+    case op:
       of 'N', 'S', 'E', 'W':
-        ship.translate(dirEnum[instr.op], instr.val)
+        ship.translate(op, val)
       of 'R', 'L':
-        ship.turn(if instr.op == 'L': -instr.val else: instr.val)
+        ship.turn(if op == 'L': -val else: val)
       of 'F':
-        ship.forward(instr.val)
+        ship.forward(val)
       else:
-        assert(false, "Unknown op: " & $(instr.op))
+        assert(false, fmt"Unknown op: {op}")
 
 proc part2(ship: var Ship, instrs: seq[Instr]) =
-  for instr in instrs:
-    case instr.op:
+  for (op, val) in instrs:
+    case op:
       of 'N', 'S', 'E', 'W':
-        ship.translateWp(dirEnum[instr.op], instr.val)
+        ship.translateWp(op, val)
       of 'L', 'R':
-        ship.rotateWp(if instr.op == 'L': -instr.val else: instr.val)
+        ship.rotateWp(if op == 'L': -val else: val)
       of 'F':
-        ship.moveToWp(instr.val)
+        ship.moveToWp(val)
       else:
-        assert(false, "Unknown op: " & $(instr.op))
+        assert(false, fmt"Unknown op: {op}")
 
 let instrs = get_lines().map(parse_instr)
 var ship = newShip()
