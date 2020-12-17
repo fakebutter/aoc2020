@@ -21,13 +21,13 @@ proc parse_rule(rule: string): Rule =
   else:
     assert(false)
 
-proc is_in(value: int, the_range: (int, int)): bool =
-  the_range[0] <= value and value <= the_range[1]
-
 proc match(rule: Rule, value: int): bool =
-  is_in(value, rule.range1) or is_in(value, rule.range2)
+  (rule.range1[0] <= value and value <= rule.range1[1]) or
+    (rule.range2[0] <= value and value <= rule.range2[1])
 
 ################################################################################
+
+# Part 1
 
 proc get_bad_fields(ticket: seq[int], rules: seq[Rule]): seq[int] =
   let no_matching_rules = proc (field: int): bool =
@@ -40,6 +40,8 @@ proc part1(rules: seq[Rule], ticket: seq[int], nearby: seq[seq[int]]) =
   echo bad_fields.sum
 
 ################################################################################
+
+# Part 2
 
 proc solve(poss: Table[int, HashSet[string]]): Table[int, string] =
   var
@@ -76,14 +78,15 @@ proc part2(rules: seq[Rule], ticket: seq[int], nearby: seq[seq[int]]) =
     get_bad_fields(tix, rules).len == 0
 
   let good_tickets = nearby.filter(is_good_ticket)
-  let poss = build_poss(rules, good_tickets)
-  let soln = solve(poss)
+  let field_names = solve(build_poss(rules, good_tickets))
 
-  var prod = 1
-  for (idx, field) in soln.pairs:
-    if field.find("departure") != -1:
-      prod *= ticket[idx]
-  echo prod
+  let lookup_field_name = proc (entry: (int, int)): (string, int) =
+    let (idx, value) = entry
+    return (field_names[idx], value)
+
+  let my_ticket = toSeq(ticket.pairs).map(lookup_field_name).toTable
+  let departure_fields = toSeq(my_ticket.pairs).filterIt(it[0].contains("departure"))
+  echo departure_fields.mapIt(it[1]).product
 
 ################################################################################
 
