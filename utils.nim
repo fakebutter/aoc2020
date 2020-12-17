@@ -26,3 +26,5 @@ proc sum*[T](items: seq[T]): T =
 
 proc product*[T](items: seq[T]): T =
   items.foldl(a * b)
+
+proc identity*[T](v: T): T = v

@@ -14,9 +14,9 @@ type
 proc parse_rule(rule: string): Rule =
   if rule =~ re"([^:]+): (\d+)-(\d+) or (\d+)-(\d+)":
     return (
-      matches[0],
-      (parseInt(matches[1]), parseInt(matches[2])),
-      (parseInt(matches[3]), parseInt(matches[4]))
+      field: matches[0],
+      range1: (parseInt(matches[1]), parseInt(matches[2])),
+      range2: (parseInt(matches[3]), parseInt(matches[4]))
     )
   else:
     assert(false)
@@ -24,63 +24,68 @@ proc parse_rule(rule: string): Rule =
 proc is_in(value: int, the_range: (int, int)): bool =
   the_range[0] <= value and value <= the_range[1]
 
-proc validate(ticket: seq[int], rules: seq[Rule]): seq[int] =
-  for field in ticket:
-    var good = false
-    for rule in rules:
-      if is_in(field, rule.range1) or is_in(field, rule.range2):
-        good = true
-        break
-    if not good:
-      result.add(field)
+proc match(rule: Rule, value: int): bool =
+  is_in(value, rule.range1) or is_in(value, rule.range2)
+
+################################################################################
+
+proc get_bad_fields(ticket: seq[int], rules: seq[Rule]): seq[int] =
+  let no_matching_rules = proc (field: int): bool =
+    not rules.mapIt(it.match(field)).any(identity)
+
+  ticket.filter(no_matching_rules)
 
 proc part1(rules: seq[Rule], ticket: seq[int], nearby: seq[seq[int]]) =
-  var bad = newSeq[int]()
-  for tix in nearby:
-    for b in validate(tix, rules):
-      bad.add(b)
+  let bad_fields = nearby.mapIt(get_bad_fields(it, rules)).concat
+  echo bad_fields.sum
 
-  echo bad.sum
+################################################################################
 
-proc solve(poss: TableRef[int, HashSet[string]]): Table[int, string] =
-  var poss = poss
+proc solve(poss: Table[int, HashSet[string]]): Table[int, string] =
+  var
+    poss = poss
+    idx: int
+    match: string
 
   while poss.len > 0:
-    var
-      idx: int
-      match: string
-
+    # Find field with only one matching rule remaining.
     for (i, fields) in poss.pairs:
       if fields.len == 1:
         idx = i
         match = toSeq(fields.items)[0]
+        result[idx] = match
         break
 
+    # Prune
     poss.del(idx)
     for (i, fields) in poss.pairs:
       poss[i].excl(match)
-    result[idx] = match
 
-proc part2(rules: seq[Rule], ticket: seq[int], nearby: seq[seq[int]]) =
-  var good_tickets = newSeq[seq[int]]()
-  for tix in nearby:
-    if validate(tix, rules).len == 0:
-      good_tickets.add(tix)
-
-  var poss = newTable[int, HashSet[string]]()
+proc build_poss(rules: seq[Rule], good_tickets: seq[seq[int]]): Table[int, HashSet[string]] =
   for idx in 0..<good_tickets[0].len:
     let values = good_tickets.mapIt(it[idx])
-    for rule in rules:
-      if values.mapIt(is_in(it, rule.range1) or is_in(it, rule.range2)).all(identity):
-        if idx notin poss:
-          poss[idx] = initHashSet[string]()
-        poss[idx].incl(rule.field)
+    let matches_all_values = proc (rule: Rule): bool =
+      values.mapIt(rule.match(it)).all(identity)
+
+    # Find rules that match all values in the current position.
+    let matching_rules = rules.filter(matches_all_values)
+    result[idx] = toHashSet(matching_rules.mapIt(it.field))
+
+proc part2(rules: seq[Rule], ticket: seq[int], nearby: seq[seq[int]]) =
+  let is_good_ticket = proc (tix: seq[int]): bool =
+    get_bad_fields(tix, rules).len == 0
+
+  let good_tickets = nearby.filter(is_good_ticket)
+  let poss = build_poss(rules, good_tickets)
+  let soln = solve(poss)
 
   var prod = 1
-  for (idx, field) in solve(poss).pairs:
+  for (idx, field) in soln.pairs:
     if field.find("departure") != -1:
       prod *= ticket[idx]
   echo prod
+
+################################################################################
 
 let
   input = toSeq(get_lines().split((l) => l == ""))
