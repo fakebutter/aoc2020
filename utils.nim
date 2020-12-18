@@ -28,3 +28,21 @@ proc product*[T](items: seq[T]): T =
   items.foldl(a * b)
 
 proc identity*[T](v: T): T = v
+
+proc none*[T](items: seq[T]): bool =
+  for i in items:
+    if i:
+      return false
+  return true
+
+proc any*[T](items: seq[T]): bool =
+  for i in items:
+    if i:
+      return true
+  return false
+
+proc all*[T](items: seq[T]): bool =
+  for i in items:
+    if not i:
+      return false
+  return true
