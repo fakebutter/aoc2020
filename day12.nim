@@ -74,7 +74,7 @@ proc turn(ship: var Ship, deg: int) =
 proc parse_instr(line: string): (char, int) =
   (line[0], parseInt(line[1..^1]))
 
-proc part1(ship: var Ship, instrs: seq[Instr]) =
+proc part1(ship: var Ship, instrs: seq[Instr]): int =
   for (op, val) in instrs:
     case op:
       of 'N', 'S', 'E', 'W':
@@ -86,7 +86,9 @@ proc part1(ship: var Ship, instrs: seq[Instr]) =
       else:
         assert(false, fmt"Unknown op: {op}")
 
-proc part2(ship: var Ship, instrs: seq[Instr]) =
+  return abs(ship.pos.x) + abs(ship.pos.y)
+
+proc part2(ship: var Ship, instrs: seq[Instr]): int =
   for (op, val) in instrs:
     case op:
       of 'N', 'S', 'E', 'W':
@@ -98,11 +100,10 @@ proc part2(ship: var Ship, instrs: seq[Instr]) =
       else:
         assert(false, fmt"Unknown op: {op}")
 
+  return abs(ship.pos.x) + abs(ship.pos.y)
+
 let instrs = get_lines().map(parse_instr)
 var ship = newShip()
-part1(ship, instrs)
-echo abs(ship.pos.x) + abs(ship.pos.y)
-
+echo part1(ship, instrs)
 ship = newShip()
-part2(ship, instrs)
-echo abs(ship.pos.x) + abs(ship.pos.y)
+echo part2(ship, instrs)

@@ -1,7 +1,6 @@
 import math
 import sequtils
 import strutils
-import sugar
 import utils
 
 proc gcd(a: int, b: int): int =
@@ -38,22 +37,24 @@ proc multinv(a: int, m: int): int =
   
 proc crt(eqns: seq[(int, int)]): int =
   let
-    big_m = eqns.mapIt(it[1]).foldl(a * b)
+    big_m = eqns.mapIt(it[1]).product
 
   for (idx, tmp) in eqns.pairs:
-    let (v, m) = tmp
-
-    let z = toSeq(eqns.pairs())
-      .filterIt(it[0] != idx)
-      .mapIt(it[1][1])
-      .foldl(a * b)
+    let
+      (v, m) = tmp
+      z = toSeq(eqns.pairs())
+        .filterIt(it[0] != idx)
+        .mapIt(it[1][1])
+        .product
     result += v * z * multinv(z, m)
 
   return floorMod(result, big_m)
 
-proc part1(arrival: int, buses: seq[int]) =
-  var best_wait = -1
-  var best_bus = 0
+proc part1(arrival: int, buses_raw: string): int =
+  var
+    buses = buses_raw.split(",").filterIt(it != "x").map(parseInt)
+    best_wait = -1
+    best_bus = 0
 
   for bus in buses:
     let
@@ -62,22 +63,23 @@ proc part1(arrival: int, buses: seq[int]) =
       wait = if rem == 0: 0 else: quot * bus + bus - arrival
 
     if best_wait == -1 or wait < best_wait:
-      best_wait = wait; best_bus = bus
+      (best_wait, best_bus) = (wait, bus)
 
-  echo best_wait * best_bus
+  return best_wait * best_bus
 
-proc part2(buses: seq[int]) =
-  var eqns = newSeq[(int, int)]()
+proc part2(buses_raw: string): int =
+  var
+    buses = buses_raw.split(",").mapIt(if it == "x": "0" else: it).map(parseInt)
+    eqns = newSeq[(int, int)]()
+
   for (idx, bus) in buses.pairs:
     if bus != 0:
       eqns.add((-idx, bus))
 
-  echo crt(eqns)
+  return crt(eqns)
 
-let lines = get_lines()
-let arrival = parseInt(lines[0])
-var buses = lines[1].split(",").filter((v) => v != "x").map(parseInt)
-part1(arrival, buses)
-
-buses = lines[1].split(",").mapIt(if it == "x": "0" else: it).map(parseInt)
-part2(buses)
+let
+  lines = get_lines()
+  arrival = parseInt(lines[0])
+echo part1(arrival, lines[1])
+echo part2(lines[1])

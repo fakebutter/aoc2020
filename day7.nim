@@ -47,54 +47,58 @@ proc getNode(graph: Graph, color: string): Node =
   return graph.nodes[color]
 
 proc connect(graph: Graph, from_color: string, to_color: string, count: int) =
-  let node_from = graph.getNode(from_color)
-  let node_to = graph.getNode(to_color)
+  let
+    node_from = graph.getNode(from_color)
+    node_to = graph.getNode(to_color)
   node_from.children.add((count, node_to))
 
+################################################################################
+
+# Part 1
+
 proc build_graph_part1(conns: seq[OuterBag]): Graph =
-  var graph = newGraph()
+  result = newGraph()
 
   for (outer_color, inner) in conns:
     for (count, inner_color) in inner:
-      graph.connect(inner_color, outer_color, 0)
-
-  return graph
-
-proc build_graph_part2(conns: seq[OuterBag]): Graph =
-  var graph = newGraph()
-
-  for (outer_color, inner) in conns:
-    for (count, inner_color) in inner:
-      graph.connect(outer_color, inner_color, count)
-
-  return graph
+      result.connect(inner_color, outer_color, 0)
 
 proc dfs_part1(graph: Graph, node: Node, visited: var HashSet[string]) =
   for (_, child) in node.children:
     visited.incl(child.color)
     dfs_part1(graph, child, visited)
 
-proc crawl_part1(graph: Graph) =
+proc crawl_part1(graph: Graph): int =
   let root = graph.getNode("shiny gold")
   var visited: HashSet[string]
   dfs_part1(graph, root, visited)
-  echo visited.len
+  return visited.len
+
+################################################################################
+
+# Part 2
+
+proc build_graph_part2(conns: seq[OuterBag]): Graph =
+  result = newGraph()
+
+  for (outer_color, inner) in conns:
+    for (count, inner_color) in inner:
+      result.connect(outer_color, inner_color, count)
 
 proc dfs_part2(graph: Graph, node: Node, total: int): int =
-  var sum = total
+  result = total
   for (count, child) in node.children:
-    sum += total * dfs_part2(graph, child, count)
-  return sum
+    result += total * dfs_part2(graph, child, count)
 
-proc crawl_part2(graph: Graph) =
+proc crawl_part2(graph: Graph): int =
   let root = graph.getNode("shiny gold")
   # Exclude shiny gold itself.
-  echo dfs_part2(graph, root, 1) - 1
+  return dfs_part2(graph, root, 1) - 1
+
+################################################################################
 
 let lines = get_lines()
-
-let graph1 = build_graph_part1(parse(lines))
-crawl_part1(graph1)
-
-let graph2 = build_graph_part2(parse(lines))
-crawl_part2(graph2)
+var graph = build_graph_part1(parse(lines))
+echo crawl_part1(graph)
+graph = build_graph_part2(parse(lines))
+echo crawl_part2(graph)

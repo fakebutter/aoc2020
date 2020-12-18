@@ -31,5 +31,5 @@ proc find_gaps(seats: seq[int]): seq[int] =
 
 let seats = get_lines().map(get_seat)
 echo max(seats)
-echo(min(seats), "->", max(seats))
-echo find_gaps(sorted(seats, system.cmp[int]))
+echo min(seats), "->", max(seats)
+echo find_gaps(sorted(seats))

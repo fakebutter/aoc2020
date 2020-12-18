@@ -19,7 +19,7 @@ proc run(instrs: seq[Instr]): (Result, int) =
   var
     ip = 0
     accum = 0
-  var visited: HashSet[int]
+    visited: HashSet[int]
 
   while true:
     if ip in visited:
@@ -48,9 +48,7 @@ proc flip(instrs: var seq[Instr], idx: int) =
     instrs[idx].opcode = "nop"
 
 var instrs = parse(get_lines())
-
 echo run(instrs)
-
 for i in 0..<instrs.len:
   flip(instrs, i)
   let (result, accum) = run(instrs)

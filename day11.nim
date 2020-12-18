@@ -60,10 +60,10 @@ proc count_adjacent_occupied(map: Map, pos: Pair): int =
       result += 1
 
 proc can_occupy1(map: Map, pos: Pair): bool =
-  return count_adjacent_occupied(map, pos) == 0
+  count_adjacent_occupied(map, pos) == 0
 
 proc can_vacate1(map: Map, pos: Pair): bool =
-  return count_adjacent_occupied(map, pos) >= 4
+  count_adjacent_occupied(map, pos) >= 4
 
 ################################################################################
 
@@ -89,10 +89,10 @@ proc count_visible_occupied(map: Map, pos: Pair): int =
   ].mapIt(has_visible_occupied(map, pos, it)).count(true)
 
 proc can_occupy2(map: Map, pos: Pair): bool =
-  return count_visible_occupied(map, pos) == 0
+  count_visible_occupied(map, pos) == 0
 
 proc can_vacate2(map: Map, pos: Pair): bool =
-  return count_visible_occupied(map, pos) >= 5
+  count_visible_occupied(map, pos) >= 5
 
 ################################################################################
 
@@ -118,14 +118,12 @@ proc step(map: var Map, can_occupy: SeatPred, can_vacate: SeatPred): bool =
 
   return sig_before != map.sig
 
+proc run(lines: seq[string], can_occupy: SeatPred, can_vacate: SeatPred): int =
+  var map = newMap(lines)
+  while step(map, can_occupy, can_vacate):
+    discard
+  return map.count('#')
+
 let lines = get_lines()
-
-var map = newMap(lines)
-while step(map, can_occupy1, can_vacate1):
-  discard
-echo map.count('#')
-
-map = newMap(lines)
-while step(map, can_occupy2, can_vacate2):
-  discard
-echo map.count('#')
+echo run(lines, can_occupy1, can_vacate1)
+echo run(lines, can_occupy2, can_vacate2)

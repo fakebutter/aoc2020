@@ -36,8 +36,7 @@ proc get_adjacent(pos: V4, dim: int): seq[V4] =
 
 proc count_active_neighbors(pocket: var HashSet[V4], pos: V4, dim: int): int =
   get_adjacent(pos, dim)
-    .mapIt(it in pocket)
-    .count(true)
+    .countIt(it in pocket)
 
 proc step(pocket: var HashSet[V4], dim: int) =
   var
@@ -51,26 +50,25 @@ proc step(pocket: var HashSet[V4], dim: int) =
     if active != 2 and active != 3:
       deactivated.add(pos)
 
-    for n in get_adjacent(pos, dim):
-      shaded.inc(n)
+    for adj in get_adjacent(pos, dim):
+      shaded.inc(adj)
   
   # Turn off
   for (pos, count) in shaded.pairs:
     if (pos notin pocket) and count == 3:
       activated.add(pos)
 
-  for pos in activated:
-    pocket.incl(pos)
-  for pos in deactivated:
-    pocket.excl(pos)
+  pocket.incl(toHashSet(activated))
+  pocket.excl(toHashSet(deactivated))
 
-proc run(pocket: HashSet[V4], dim: int) =
+proc run(pocket: HashSet[V4], dim: int): int =
   var pocket = pocket
   for i in 0..<6:
     step(pocket, dim)
-  echo pocket.len
+  return pocket.len
 
-let lines = get_lines()
-let pocket = make_pocket(lines)
-run(pocket, 3)
-run(pocket, 4)
+let
+  lines = get_lines()
+  pocket = make_pocket(lines)
+echo run(pocket, 3)
+echo run(pocket, 4)

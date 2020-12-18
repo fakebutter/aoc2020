@@ -7,7 +7,7 @@ import tables
 import utils
 
 proc get_passports(lines: seq[string]): seq[string] =
-  return toSeq(lines.split((l) => l == "")).mapIt(it.join(" "))
+  toSeq(lines.split((l) => l == "")).mapIt(it.join(" "))
 
 proc is_valid_field(key: string, value: string): bool =
   case key:
@@ -31,19 +31,19 @@ proc is_valid_field(key: string, value: string): bool =
     of "pid":
       return value =~ re"^[0-9]{9}$"
 
-proc check_passport(passport: string, validate_field: bool): bool =
+proc validate_passport(passport: string, validate_field: bool): bool =
   var seen = {"byr": false, "iyr": false, "eyr": false, "hgt": false, "hcl": false, "ecl": false, "pid": false}.toTable
     
   for entry in passport.split(" ").filter((e) => e != ""):
     let kv = entry.split(":")
-    if seen.hasKey(kv[0]) and (not validate_field or is_valid_field(kv[0], kv[1])):
+    if kv[0] in seen and (not validate_field or is_valid_field(kv[0], kv[1])):
       seen[kv[0]] = true
 
   return toSeq(seen.values).count(true) == 7
 
 proc run(passports: seq[string], validate_field: bool): int =
   return passports
-    .countIt(check_passport(it, validate_field))
+    .countIt(validate_passport(it, validate_field))
 
 let passports = get_passports(get_lines())
 echo run(passports, false)

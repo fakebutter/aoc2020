@@ -1,35 +1,31 @@
 import algorithm
 import sequtils
 import strutils
-import sugar
 import utils
 
-proc part1(jolts: seq[int]) =
-  var jolts = sorted(jolts)
-  jolts.add(max(jolts) + 3)
+proc part1(jolts: seq[int]): int =
   var
     diff1, diff3 = 0
+    jolts = sorted(jolts)
+  jolts.add(max(jolts) + 3)
 
   for (idx, jolt) in jolts.pairs:
-    let prev = if idx == 0:
-      0
-    else:
-      jolts[idx - 1]
+    let prev = if idx == 0: 0 else: jolts[idx - 1]
 
     if jolt - prev == 1:
       diff1 += 1
     else:
       diff3 += 1
 
-  echo diff1 * diff3
+  return diff1 * diff3
 
-proc part2(jolts: seq[int]) =
+proc part2(jolts: seq[int]): int =
   var jolts = sorted(jolts)
   jolts.insert(0, 0)
   jolts.add(max(jolts) + 3)
 
-  var total = jolts.map((_) => 0)
-  total[^1] = 1
+  var total = repeat(0, jolts.len - 1)
+  total.add(1)
 
   var i = jolts.len - 2
   while i >= 0:
@@ -44,8 +40,8 @@ proc part2(jolts: seq[int]) =
     total[i] = subtotal
     i -= 1
 
-  echo total[0]
+  return total[0]
 
 let jolts = get_lines().map(parseInt)
-part1(jolts)
-part2(jolts)
+echo part1(jolts)
+echo part2(jolts)

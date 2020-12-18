@@ -14,6 +14,7 @@ proc part1(nums: seq[int]): int =
       let j = num - i
       if i != j and j in history:
         valid = true
+        break
 
     if not valid:
       return num
@@ -21,9 +22,9 @@ proc part1(nums: seq[int]): int =
     history.popFirst()
     history.addLast(num)
 
-proc found(nums: seq[int], start: int, stop: int) =
+proc found(nums: seq[int], start: int, stop: int): int =
   let sub = nums[start..stop]
-  echo min(sub) + max(sub)
+  return min(sub) + max(sub)
 
 proc part2(nums: seq[int], target: int): (int, int) =
   var sums = newSeq[int]()
@@ -43,4 +44,4 @@ let nums = get_lines().map(parseInt)
 let p1 = part1(nums)
 echo p1
 let (start, stop) = part2(nums, p1)
-found(nums, start, stop)
+echo found(nums, start, stop)

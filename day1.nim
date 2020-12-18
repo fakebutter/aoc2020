@@ -1,7 +1,7 @@
+import itertools
 import sequtils
 import strutils
 import utils
-import itertools
 
 proc run(nums: seq[int], c: int): int =
   for comb in combinations(nums, c):

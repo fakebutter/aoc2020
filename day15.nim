@@ -3,7 +3,7 @@ import tables
 import strutils
 import sequtils
 
-proc run(numbers: seq[int], rounds: int) =
+proc run(numbers: seq[int], rounds: int): int =
   let last_seen = newTable[int, int]()
 
   for (idx, num) in numbers[0..^2].pairs:
@@ -23,8 +23,8 @@ proc run(numbers: seq[int], rounds: int) =
     last_num = num
     turn += 1
 
-  echo last_num
+  return last_num
 
 let numbers = get_lines()[0].split(",").map(parseInt)
-run(numbers, 2020)
-run(numbers, 30000000)
+echo run(numbers, 2020)
+echo run(numbers, 30000000)

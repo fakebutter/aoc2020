@@ -26,11 +26,10 @@ proc write_mem2(mem: TableRef[int64, int64], mask: Mask2, address: int, value: i
     else:
       for_all_poss(address, idx - 1, fun)
 
-  var address = (address or mask.ones)
   let set_mem = proc (address: int64) =
     mem[address] = value
 
-  for_all_poss(address, 35, set_mem)
+  for_all_poss((address or mask.ones), 35, set_mem)
 
 proc parse_mask1(mask: string): Mask1 =
   result.zeroes = 0xffffffffffffffff
@@ -59,7 +58,7 @@ proc parse_mask2(mask: string): Mask2 =
       else:
         assert(false)
 
-proc part1(lines: seq[string]) =
+proc part1(lines: seq[string]): int64 =
   var mask: Mask1 = (0i64, 0i64, 0i64)
   var mem = newTable[int64, int64]()
 
@@ -69,9 +68,9 @@ proc part1(lines: seq[string]) =
     elif line =~ re"mem\[(\d+)\] = (\d+)":
       write_mem1(mem, mask, parseInt(matches[0]), parseInt(matches[1]))
 
-  echo toSeq(mem.values).sum
+  return toSeq(mem.values).sum
 
-proc part2(lines: seq[string]) =
+proc part2(lines: seq[string]): int64 =
   var mask: Mask2 = (0i64, 0i64)
   var mem = newTable[int64, int64]()
 
@@ -81,8 +80,8 @@ proc part2(lines: seq[string]) =
     elif line =~ re"mem\[(\d+)\] = (\d+)":
       write_mem2(mem, mask, parseInt(matches[0]), parseInt(matches[1]))
 
-  echo toSeq(mem.values).sum
+  return toSeq(mem.values).sum
 
 let lines = get_lines()
-part1(lines)
-part2(lines)
+echo part1(lines)
+echo part2(lines)
