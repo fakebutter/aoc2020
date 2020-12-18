@@ -1,6 +1,7 @@
 import re
 import sequtils
 import strutils
+import sugar
 import utils
 
 proc tokenize(line: string): seq[string] =
@@ -82,14 +83,13 @@ proc build_prn(tokens: seq[string]): seq[string] =
 
 proc eval_prn(tokens: seq[string]): int =
   var stack = newSeq[string]()
+  let popInt = () => parseInt(stack.pop())
 
   for token in tokens:
     if token == "*":
-      let res = parseInt(stack.pop()) * parseInt(stack.pop())
-      stack.add($res)
+      stack.add($(popInt() * popInt()))
     elif token == "+":
-      let res = parseInt(stack.pop()) + parseInt(stack.pop())
-      stack.add($res)
+      stack.add($(popInt() + popInt()))
     else:
       stack.add(token)
 
