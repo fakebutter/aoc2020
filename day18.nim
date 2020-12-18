@@ -1,46 +1,27 @@
-import algorithm
-import math
 import re
 import sequtils
-import sets
-import strformat
 import strutils
-import sugar
-import tables
 import utils
 
-proc tokenize(eqn: string): seq[string] =
-  for token in eqn.split(" "):
-    var i = 0
-    while token[i] == '(':
-      result.add("(")
-      i += 1
-    let stop = token[i..^1].find(")")
-    if stop != -1:
-      result.add(token[i..<stop])
-      i = stop
-      while i < token.len:
-        result.add(")")
-        i += 1
-    else:
-      result.add(token[i..^1])
+proc tokenize(line: string): seq[string] =
+  for token in line.split(" "):
+    var token = token
+    while token.len > 0:
+      if token =~ re"^(\d+|[()+*])":
+        result.add(matches[0])
+        token = token[matches[0].len..^1]
 
 proc eval_rd(tokens: seq[string], stack: var seq[string], idx: int): int =
   let eval_top = proc (stack: var seq[string], op: string) =
     let
       rhs = parseInt(stack.pop())
       lhs = parseInt(stack.pop())
+    var res: int
     case op:
-      of "+":
-        stack.add($(lhs + rhs))
-      of "-":
-        stack.add($(lhs - rhs))
-      of "/":
-        stack.add($(lhs / rhs))
-      of "*":
-        stack.add($(lhs * rhs))
-      else:
-        assert(false)
+      of "+": res = lhs + rhs
+      of "*": res = lhs * rhs
+      else: assert(false)
+    stack.add($res)
 
   var
     idx = idx
@@ -49,6 +30,7 @@ proc eval_rd(tokens: seq[string], stack: var seq[string], idx: int): int =
   # Some kind of weird shit recursive descent.
   while idx < tokens.len:
     let token = tokens[idx]
+
     if token == "(":
       idx = eval_rd(tokens, stack, idx + 1)
       if cur_op != "":
@@ -57,7 +39,7 @@ proc eval_rd(tokens: seq[string], stack: var seq[string], idx: int): int =
       continue
     elif token == ")":
       return idx + 1
-    elif token in ["+", "-", "/", "*"]:
+    elif token in ["+", "*"]:
       cur_op = token
     else:
       stack.add(token)
@@ -74,6 +56,7 @@ proc build_prn(tokens: seq[string]): seq[string] =
     idx = 0
     stack = newSeq[string]()
 
+  # Shunting yard
   while idx < tokens.len:
     let token = tokens[idx]
 
@@ -99,15 +82,14 @@ proc build_prn(tokens: seq[string]): seq[string] =
 
 proc eval_prn(tokens: seq[string]): int =
   var stack = newSeq[string]()
+
   for token in tokens:
     if token == "*":
-      stack.add($(
-        parseInt(stack.pop()) * parseInt(stack.pop())
-      ))
+      let res = parseInt(stack.pop()) * parseInt(stack.pop())
+      stack.add($res)
     elif token == "+":
-      stack.add($(
-        parseInt(stack.pop()) + parseInt(stack.pop())
-      ))
+      let res = parseInt(stack.pop()) + parseInt(stack.pop())
+      stack.add($res)
     else:
       stack.add(token)
 
@@ -122,14 +104,6 @@ proc eval_eqn2(eqn: string): int =
   let tokens = tokenize(eqn)
   return eval_prn(build_prn(tokens))
 
-proc part1(lines: seq[string]): int =
-  for line in lines:
-    result += eval_eqn1(line)
-
-proc part2(lines: seq[string]): int =
-  for line in lines:
-    result += eval_eqn2(line)
-
 let lines = get_lines()
-echo part1(lines)
-echo part2(lines)
+echo lines.map(eval_eqn1).sum
+echo lines.map(eval_eqn2).sum
