@@ -11,7 +11,7 @@ proc make_pocket(lines: seq[string]): HashSet[V4] =
   for (y, row) in lines.pairs:
     for (x, c) in toSeq(row.items).pairs:
       if c == '#':
-        result.incl((x, lines.len - y - 1, 0, 0))
+        result.incl((x, y, 0, 0))
 
 iterator get_adjacent3(x, y, z: int): V4 =
   for nx in x-1..x+1:
@@ -34,7 +34,7 @@ proc get_adjacent(pos: V4, dim: int): seq[V4] =
   elif dim == 4:
     return toSeq(get_adjacent4(pos.x, pos.y, pos.z, pos.w))
 
-proc count_active_neighbors(pocket: HashSet[V4], pos: V4, dim: int): int =
+proc count_active_neighbors(pocket: var HashSet[V4], pos: V4, dim: int): int =
   get_adjacent(pos, dim)
     .mapIt(it in pocket)
     .count(true)
@@ -46,6 +46,7 @@ proc step(pocket: var HashSet[V4], dim: int) =
     shaded = initCountTable[V4]()
 
   for pos in pocket.items:
+    # Turn on
     let active = count_active_neighbors(pocket, pos, dim)
     if active != 2 and active != 3:
       deactivated.add(pos)
@@ -53,6 +54,7 @@ proc step(pocket: var HashSet[V4], dim: int) =
     for n in get_adjacent(pos, dim):
       shaded.inc(n)
   
+  # Turn off
   for (pos, count) in shaded.pairs:
     if (pos notin pocket) and count == 3:
       activated.add(pos)
