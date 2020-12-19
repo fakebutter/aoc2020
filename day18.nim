@@ -13,18 +13,19 @@ proc tokenize(line: string): seq[string] =
         result.add(matches[0])
         token = token[matches[0].len..^1]
 
-proc eval_rd(tokens: var seq[string], stack: var seq[int]): int =
-  let eval_top = proc (stack: var seq[int], op: string) =
-    let
-      rhs = stack.pop()
-      lhs = stack.pop()
-    var res: int
-    case op:
-      of "+": res = lhs + rhs
-      of "*": res = lhs * rhs
-      else: assert(false)
-    stack.add(res)
+################################################################################
+# Part 1
 
+proc eval_top(stack: var seq[int], op: string): int =
+  let
+    rhs = stack.pop()
+    lhs = stack.pop()
+  case op:
+    of "+": return lhs + rhs
+    of "*": return lhs * rhs
+    else: assert(false)
+
+proc eval_rd(tokens: var seq[string], stack: var seq[int]): int =
   var cur_op = ""
 
   # Some kind of weird shit recursive descent.
@@ -44,11 +45,20 @@ proc eval_rd(tokens: var seq[string], stack: var seq[int]): int =
       added = true
 
     if added and cur_op != "":
-      eval_top(stack, cur_op)
+      stack.add(eval_top(stack, cur_op))
       cur_op = ""
 
   assert stack.len == 1
   return stack.pop()
+
+proc eval_eqn1(eqn: string): int =
+  var
+    stack = newSeq[int]()
+    tokens = reversed(tokenize(eqn))
+  return eval_rd(tokens, stack)
+
+################################################################################
+# Part 2
 
 proc build_prn(tokens: var seq[string]): seq[string] =
   var stack = newSeq[string]()
@@ -88,15 +98,11 @@ proc eval_prn(tokens: seq[string]): int =
   assert stack.len == 1
   return parseInt(stack.pop())
 
-proc eval_eqn1(eqn: string): int =
-  var
-    stack = newSeq[int]()
-    tokens = reversed(tokenize(eqn))
-  return eval_rd(tokens, stack)
-
 proc eval_eqn2(eqn: string): int =
   var tokens = reversed(tokenize(eqn))
   return eval_prn(build_prn(tokens))
+
+################################################################################
 
 let lines = get_lines()
 echo lines.map(eval_eqn1).sum
