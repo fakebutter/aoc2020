@@ -1,3 +1,4 @@
+import algorithm
 import re
 import sequtils
 import strutils
@@ -12,71 +13,64 @@ proc tokenize(line: string): seq[string] =
         result.add(matches[0])
         token = token[matches[0].len..^1]
 
-proc eval_rd(tokens: seq[string], stack: var seq[string], idx: int): int =
-  let eval_top = proc (stack: var seq[string], op: string) =
+proc eval_rd(tokens: var seq[string], stack: var seq[int]): int =
+  let eval_top = proc (stack: var seq[int], op: string) =
     let
-      rhs = parseInt(stack.pop())
-      lhs = parseInt(stack.pop())
+      rhs = stack.pop()
+      lhs = stack.pop()
     var res: int
     case op:
       of "+": res = lhs + rhs
       of "*": res = lhs * rhs
       else: assert(false)
-    stack.add($res)
+    stack.add(res)
 
-  var
-    idx = idx
-    cur_op = ""
+  var cur_op = ""
 
   # Some kind of weird shit recursive descent.
-  while idx < tokens.len:
-    let token = tokens[idx]
+  while tokens.len > 0:
+    let token = tokens.pop()
+    var added = false
 
     if token == "(":
-      idx = eval_rd(tokens, stack, idx + 1)
-      if cur_op != "":
-        eval_top(stack, cur_op)
-        cur_op = ""
-      continue
+      stack.add(eval_rd(tokens, stack))
+      added = true
     elif token == ")":
-      return idx + 1
+      return stack.pop()
     elif token in ["+", "*"]:
       cur_op = token
     else:
-      stack.add(token)
-      if cur_op != "":
-        eval_top(stack, cur_op)
-        cur_op = ""
+      stack.add(parseInt(token))
+      added = true
 
-    idx += 1
+    if added and cur_op != "":
+      eval_top(stack, cur_op)
+      cur_op = ""
 
-  return parseInt(stack.pop())
+  assert stack.len == 1
+  return stack.pop()
 
-proc build_prn(tokens: seq[string]): seq[string] =
-  var
-    idx = 0
-    stack = newSeq[string]()
+proc build_prn(tokens: var seq[string]): seq[string] =
+  var stack = newSeq[string]()
 
   # Shunting yard
-  while idx < tokens.len:
-    let token = tokens[idx]
-
-    if token == "*":
-      while stack.len > 0 and stack[^1] == "+":
-        result.add(stack.pop())
-      stack.add(token)
-    elif token == "+":
-      stack.add(token)
-    elif token == "(":
-      stack.add(token)
-    elif token == ")":
-      while stack[^1] != "(":
-        result.add(stack.pop())
-      discard stack.pop()
-    else:
-      result.add(token)
-
-    idx += 1
+  while tokens.len > 0:
+    let token = tokens.pop()
+    case token
+      of "*":
+        while stack.len > 0 and stack[^1] == "+":
+          result.add(stack.pop())
+        stack.add(token)
+      of "+":
+        stack.add(token)
+      of "(":
+        stack.add(token)
+      of ")":
+        while stack[^1] != "(":
+          result.add(stack.pop())
+        discard stack.pop()
+      else:
+        result.add(token)
 
   while stack.len > 0:
     result.add(stack.pop())
@@ -86,22 +80,22 @@ proc eval_prn(tokens: seq[string]): int =
   let popInt = () => parseInt(stack.pop())
 
   for token in tokens:
-    if token == "*":
-      stack.add($(popInt() * popInt()))
-    elif token == "+":
-      stack.add($(popInt() + popInt()))
-    else:
-      stack.add(token)
+    case token
+      of "*": stack.add($(popInt() * popInt()))
+      of "+": stack.add($(popInt() + popInt()))
+      else: stack.add(token)
 
+  assert stack.len == 1
   return parseInt(stack.pop())
 
 proc eval_eqn1(eqn: string): int =
-  var stack = newSeq[string]()
-  let tokens = tokenize(eqn)
-  return eval_rd(tokens, stack, 0)
+  var
+    stack = newSeq[int]()
+    tokens = reversed(tokenize(eqn))
+  return eval_rd(tokens, stack)
 
 proc eval_eqn2(eqn: string): int =
-  let tokens = tokenize(eqn)
+  var tokens = reversed(tokenize(eqn))
   return eval_prn(build_prn(tokens))
 
 let lines = get_lines()
