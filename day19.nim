@@ -1,4 +1,3 @@
-import algorithm
 import itertools
 import re
 import sequtils
@@ -65,7 +64,6 @@ proc part1(rules: Table[int, Rule], sentences: seq[string]): int =
 
 proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
   let
-    poss = gen_all_poss(rules, 0).toHashSet
     possHead = gen_all_poss(rules, 42)
     possTail = gen_all_poss(rules, 31)
 
@@ -83,36 +81,34 @@ proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
     return (false, 0)
 
   for sentence in sentences:
-    if sentence in poss:
+    # Looking for: m x 42, n x 42, m x 31
+    var
+      sentence = sentence
+      has_head = false
+      has_tail = false
+
+    # 42 42 ... 31 31
+    while true:
+      let
+        (vh, hl) = validHead(sentence)
+        (vt, tl) = validTail(sentence)
+      if vh and vt:
+        sentence = sentence[hl..^tl+1]
+        has_tail = true
+      else:
+        break
+
+    # 42 42 ...
+    while true:
+      let (vh, hl) = validHead(sentence)
+      if vh:
+        sentence = sentence[hl..^1]
+        has_head = true
+      else:
+        break
+
+    if sentence == "" and has_head and has_tail:
       result += 1
-    else:
-      # Looking for: m x 42, n x 42, m x 31
-      var
-        sentence = sentence
-        has_head = false
-        has_tail = false
-
-      # 42 42 ... 31 31
-      while true:
-        let (vh, hl) = validHead(sentence)
-        let (vt, tl) = validTail(sentence)
-        if vh and vt:
-          sentence = sentence[hl..^tl+1]
-          has_tail = true
-        else:
-          break
-
-      # 42 42 ...
-      while true:
-        let (vh, hl) = validHead(sentence)
-        if vh:
-          sentence = sentence[hl..^1]
-          has_head = true
-        else:
-          break
-
-      if sentence == "" and has_head and has_tail:
-        result += 1
 
 let
   input = toSeq(get_lines().split((l) => l == ""))
