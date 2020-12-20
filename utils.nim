@@ -1,3 +1,4 @@
+import algorithm
 import sequtils
 import sugar
 
@@ -46,3 +47,7 @@ proc all*[T](items: seq[T]): bool =
     if not i:
       return false
   return true
+
+proc rev*(s: string): string =
+  result = s
+  result.reverse()
