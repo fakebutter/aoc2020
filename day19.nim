@@ -3,7 +3,6 @@ import itertools
 import re
 import sequtils
 import sets
-import strformat
 import strutils
 import sugar
 import tables
@@ -57,41 +56,6 @@ proc gen_all_poss(rules: Table[int, Rule], idx: int): seq[string] =
       else:
         assert nonterm.len > 3
 
-# Unused LR parser.
-proc parse_sentence(rules: TableRef[int, Rule], sentence: string): bool =
-  var tokens = reversed(toSeq(sentence.items)).mapIt($it)
-  var stack = newSeq[string]()
-
-  while tokens.len > 0:
-    stack.add(tokens.pop())
-
-    for (idx, rule) in rules.pairs:
-      if rule.term != "":
-        if stack.len >= 1:
-          if stack[^1] == rule.term:
-            discard stack.pop()
-            stack.add($idx)
-            break
-
-    while true:
-      var derived = false
-
-      for (idx, rule) in rules.pairs:
-        for factor in rule.nonterms:
-          if stack.len >= factor.len:
-            if zip(stack[^factor.len..^1], factor).mapIt(parseInt(it[0]) == it[1]).all:
-              for _ in 0..<factor.len:
-                discard stack.pop()
-              stack.add($idx)
-              derived = true
-
-      if not derived:
-        break
-
-    echo stack
-
-  return stack == ["0"]
-
 proc part1(rules: Table[int, Rule], sentences: seq[string]): int =
   let poss = gen_all_poss(rules, 0).toHashSet
 
@@ -122,6 +86,7 @@ proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
     if sentence in poss:
       result += 1
     else:
+      # Looking for: m x 42, n x 42, m x 31
       var
         sentence = sentence
         has_head = false
