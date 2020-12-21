@@ -15,58 +15,58 @@ proc parse(lines: seq[string]): seq[Recipe] =
     if line =~ re"^(.*) \(contains (.*)\)$":
       result.add((matches[0].split(" "), matches[1].split(", ")))
 
-proc intersect[T](lhs: seq[T], rhs: seq[T]): seq[T] =
-  toSeq(lhs.toHashSet * rhs.toHashSet)
+proc prune(candidates: TableRef[string, HashSet[string]], to_prune: seq[(string, string)]) =
+  let
+    algs = to_prune.mapIt(it[0])
+    ings = to_prune.mapIt(it[1]).toHashSet
 
-proc solve(recipes: seq[Recipe]) =
-  var
-    candidates = newTable[string, seq[string]]()
-    solved = newTable[string, string]()
-    safe_ingredients: HashSet[string]
+  candidates.deleteKeys(algs)
+  for ingredients in candidates.mvalues:
+    ingredients.excl(ings)
 
+proc solve(recipes: seq[Recipe]): Table[string, string] =
+  var candidates = newTable[string, HashSet[string]]()
+
+  # Find common set of ingredients for each allergen.
   for (ingredients, allergens) in recipes:
-    # Rule out impossible
     for allergen in allergens:
-      candidates[allergen] = intersect(candidates.getOrDefault(allergen, ingredients), ingredients)
-
-    for ingredient in ingredients:
-      safe_ingredients.incl(ingredient)
+      let ing_set = ingredients.toHashSet
+      candidates[allergen] = candidates.getOrDefault(allergen, ing_set) * ing_set
 
   while true:
-    var
-      prune_allergens = newSeq[string]()
-      prune_ingredients = newSeq[string]()
+    var to_prune = newSeq[(string, string)]()
 
     # Solve for allergens with only one candidate ingredient left.
     for (allergen, ingredients) in candidates.pairs:
       if ingredients.len == 1:
-        let culprit = ingredients[0]
-        safe_ingredients.excl(culprit)
-        solved[allergen] = culprit
-        prune_allergens.add(allergen)
-        prune_ingredients.add(culprit)
+        let culprit = toSeq(ingredients.items)[0]
+        result[allergen] = culprit
+        to_prune.add((allergen, culprit))
 
-    # Reduce
-    for allergen in prune_allergens:
-      candidates.del(allergen)
-    for ingredients in candidates.mvalues:
-      ingredients.keepItIf(it notin prune_ingredients)
-
-    if prune_allergens.len == 0:
+    # Remove what we have solved.
+    prune(candidates, to_prune)
+    if to_prune.len == 0:
       break
 
-  # Part 1
-  var freq = newCountTable[string]()
-  for (recipe_ingredients, _) in recipes:
-    for ingredients in recipe_ingredients.filterIt(it in safe_ingredients):
-      freq.inc(ingredients)
-  echo toSeq(freq.values).sum
+proc part1(recipes: seq[Recipe], solution: Table[string, string]): int =
+  let
+    all_ingredients = recipes.mapIt(it[0]).concat
+    safe_ingredients = all_ingredients.toHashSet - toSeq(solution.values).toHashSet
 
-  # Part 2
-  echo toSeq(solved.pairs)
-    .sorted((a, b) => (if a[0] < b[0]: -1 else: 1))
+  var freq = newCountTable[string]()
+  for ingredient in all_ingredients:
+    if ingredient in safe_ingredients:
+      freq.inc(ingredient)
+  return toSeq(freq.values).sum
+
+proc part2(solution: Table[string, string]): string =
+  return toSeq(solution.pairs)
+    .sorted(cmp_by_idx(0))
     .mapIt(it[1])
     .join(",")
 
-let recipes = parse(get_lines())
-solve(recipes)
+let
+  recipes = parse(get_lines())
+  solution = solve(recipes)
+echo part1(recipes, solution)
+echo part2(solution)

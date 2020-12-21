@@ -1,6 +1,9 @@
 import algorithm
+import macros
 import sequtils
+import sets
 import sugar
+import tables
 
 proc get_lines*(): seq[string] =
   result = newSeq[string]()
@@ -51,3 +54,14 @@ proc all*[T](items: seq[T]): bool =
 proc rev*(s: string): string =
   result = s
   result.reverse()
+
+proc deleteKeys*[A,B](table: TableRef[A,B], keys: seq[A]) =
+  for k in keys:
+    table.del(k)
+
+proc deleteItems*[T](s: var seq[T], ds: HashSet[T]) =
+  s.keepItIf(it notin ds)
+
+macro cmp_by_idx*(idx: static[int]): untyped =
+  result = quote do:
+    (a, b) => (if a[`idx`] < b[`idx`]: -1 else: 1)
