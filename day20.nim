@@ -74,18 +74,24 @@ iterator orientations(tile: Tile): Tile =
     yield tile
     tile = rotateTile(tile)
 
+iterator orientations(image: seq[string]): seq[string] =
+  var image = image
+  for _ in 0..<4:
+    yield image
+    image = rotateImage(image)
+  image = flipImage(image)
+  for _ in 0..<4:
+    yield image
+    image = rotateImage(image)
+
 proc is_vert_adj(upper: Tile, lower: Tile): bool =
   upper.sides[2] == lower.sides[0]
 
+proc is_horz_adj(left: Tile, right: Tile): bool =
+  left.sides[1] == right.sides[3]
+
 ################################################################################
 # Part 1
-
-proc is_solved(tiles: Table[int, Tile], path: seq[seq[int]], size: int): bool =
-  for col in 0..<size:
-    for row in 0..<size-1:
-      if not is_vert_adj(tiles[path[row][col]], tiles[path[row+1][col]]):
-        return false
-  return true
 
 proc make_image(tiles: Table[int, Tile], path: seq[seq[int]]): seq[string] =
   let size = tiles[path[0][0]].img.len
@@ -98,11 +104,11 @@ proc make_image(tiles: Table[int, Tile], path: seq[seq[int]]): seq[string] =
         line &= tiles[idx].img[y][1..^2]
       result.add(line)
 
-proc visited(path: seq[seq[int]], i: int): bool =
-  for row in path:
-    if i in row:
-      return true
-  return false
+iterator not_visited(tiles: Table[int, Tile], path: seq[seq[int]]): int =
+  let visited = path.concat()
+  for idx in tiles.keys:
+    if idx notin visited:
+      yield idx
 
 proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
 
@@ -110,24 +116,23 @@ proc scan_next_row(tiles: var Table[int, Tile], size: int, path: var seq[seq[int
   path.add(newSeq[int]())
 
   # Find possible start of next row.
-  for i in tiles.keys:
-    let upper = tiles[path[^2][0]]
-    if not visited(path, i):
-      let org_tile = tiles[i]
+  for i in not_visited(tiles, path):
+    let
+      backup = tiles[i]
+      upper = if path.len > 1: path[^2][0] else: -1
 
-      for tile in orientations(org_tile):
-        if is_vert_adj(upper, tile):
-          tiles[i] = tile
-          let soln = scan_right(tiles, size, i, path)
-          if soln.product != 0:
-            tiles[i] = org_tile
-            discard path.pop()
-            return soln
+    for candidate in orientations(backup):
+      if upper == -1 or is_vert_adj(tiles[upper], candidate):
+        tiles[i] = candidate
+        let soln = scan_right(tiles, size, i, path)
+        if soln.product != 0:
+          tiles[i] = backup
+          discard path.pop()
+          return soln
 
-      tiles[i] = org_tile
+    tiles[i] = backup
 
   discard path.pop()
-  return (0, @[])
 
 proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
   path[^1].add(idx)
@@ -140,54 +145,42 @@ proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[
         discard path[^1].pop()
         return soln
     else:
-      # Possible solution.
-      if is_solved(tiles, path, size):
-        let
-          prod = path[0][0] * path[0][^1] * path[^1][0] * path[^1][^1]
-          img = make_image(tiles, path)
-        discard path[^1].pop()
-        return (prod, img)
+      # Solution
+      let
+        prod = path[0][0] * path[0][^1] * path[^1][0] * path[^1][^1]
+        img = make_image(tiles, path)
+      discard path[^1].pop()
+      return (prod, img)
 
     discard path[^1].pop()
     return (0, @[])
 
+  let
+    cur = tiles[idx]
+    upper = if path.len > 1: path[^2][path[^1].len-1] else: -1
+
   # Find next possible tile on the right.
-  let cur = tiles[idx]
-  for i in tiles.keys:
-    if not visited(path, i):
-      let org_tile = tiles[i]
+  for i in not_visited(tiles, path):
+    let backup = tiles[i]
 
-      for tile in orientations(org_tile):
-        if cur.sides[1] == tile.sides[3]:
-          tiles[i] = tile
-          let soln = scan_right(tiles, size, i, path)
-          if soln.product != 0:
-            tiles[i] = org_tile
-            discard path[^1].pop()
-            return soln
+    for candidate in orientations(backup):
+      if is_horz_adj(cur, candidate) and (upper == -1 or is_vert_adj(tiles[upper], cur)):
+        tiles[i] = candidate
+        let soln = scan_right(tiles, size, i, path)
+        if soln.product != 0:
+          tiles[i] = backup
+          discard path[^1].pop()
+          return soln
 
-      tiles[i] = org_tile
+    tiles[i] = backup
 
   discard path[^1].pop()
-  return (0, @[])
 
 proc part1(tiles: var Table[int, Tile], size: int): Soln =
-  for idx in tiles.keys:
-    let org_tile = tiles[idx]
-
-    for tile in orientations(org_tile):
-      var path = newSeq[seq[int]]()
-      path.add(newSeq[int]())
-
-      tiles[idx] = tile
-      let soln = scan_right(tiles, size, idx, path)
-      if soln.product != 0:
-        tiles[idx] = org_tile
-        return soln
-
-    tiles[idx] = org_tile
-
-  return (0, @[])
+  var path = newSeq[seq[int]]()
+  let soln = scan_next_row(tiles, size, path)
+  if soln.product != 0:
+    return soln
 
 ################################################################################
 # Part 2
@@ -237,18 +230,8 @@ proc find_monsters(map: seq[string], monster: seq[string]): int =
     draw_monsters(map, coords, monster)
     return map.join("").count('#') - coords.len * monster.join("").count('#')
 
-iterator toss_image(image: seq[string]): seq[string] =
-  var image = image
-  for _ in 0..<4:
-    yield image
-    image = rotateImage(image)
-  image = flipImage(image)
-  for _ in 0..<4:
-    yield image
-    image = rotateImage(image)
-
 proc part2(image: seq[string], monster: seq[string]): int =
-  for img in toss_image(image):
+  for img in orientations(image):
     let roughness = find_monsters(img, monster)
     if roughness != 0:
       return roughness
