@@ -15,19 +15,20 @@ proc parse(lines: seq[string]): seq[Recipe] =
     if line =~ re"^(.*) \(contains (.*)\)$":
       result.add((matches[0].split(" "), matches[1].split(", ")))
 
+proc intersect[T](lhs: seq[T], rhs: seq[T]): seq[T] =
+  toSeq(lhs.toHashSet * rhs.toHashSet)
+
 proc solve(recipes: seq[Recipe]) =
   var
     candidates = newTable[string, seq[string]]()
+    solved = newTable[string, string]()
     safe_ingredients: HashSet[string]
-    dangerous = newTable[string, string]()
 
-  # Rule out impossible
   for (ingredients, allergens) in recipes:
+    # Rule out impossible
     for allergen in allergens:
-      if allergen notin candidates:
-        candidates[allergen] = ingredients
-      else:
-        candidates[allergen] = toSeq((candidates[allergen].toHashSet * ingredients.toHashSet))
+      candidates[allergen] = intersect(candidates.getOrDefault(allergen, ingredients), ingredients)
+
     for ingredient in ingredients:
       safe_ingredients.incl(ingredient)
 
@@ -41,7 +42,7 @@ proc solve(recipes: seq[Recipe]) =
       if ingredients.len == 1:
         let culprit = ingredients[0]
         safe_ingredients.excl(culprit)
-        dangerous[allergen] = culprit
+        solved[allergen] = culprit
         prune_allergens.add(allergen)
         prune_ingredients.add(culprit)
 
@@ -62,7 +63,7 @@ proc solve(recipes: seq[Recipe]) =
   echo toSeq(freq.values).sum
 
   # Part 2
-  echo toSeq(dangerous.pairs)
+  echo toSeq(solved.pairs)
     .sorted((a, b) => (if a[0] < b[0]: -1 else: 1))
     .mapIt(it[1])
     .join(",")
