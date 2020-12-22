@@ -8,6 +8,8 @@ import utils
 
 type
   Tile = tuple
+    rotation: int
+    flipped: bool
     img: seq[string]
     sides: seq[string]
   Soln = tuple
@@ -26,7 +28,7 @@ proc parse_tile(lines: seq[string]): (int, Tile) =
       img[^1],
       img.mapIt(it[0]).join(""),
     ]
-  return (idx, (img: img, sides: sides))
+  return (idx, (rotation: 0, flipped: false, img: img, sides: sides))
 
 proc rotateSides(sides: seq[string]): seq[string] =
   return @[
@@ -58,31 +60,49 @@ proc flipImage(img: seq[string]): seq[string] =
     for c in 0..<size:
       result[r][size-c-1] = img[r][c]
 
-proc rotateTile(tile: Tile): Tile =
-  return (img: rotateImage(tile.img), sides: rotateSides(tile.sides))
+proc rotateTile(tile: var Tile) =
+  tile.rotation = (tile.rotation + 1) mod 4
+  tile.flipped = tile.flipped
+  tile.sides = rotateSides(tile.sides)
 
-proc flipTile(tile: Tile): Tile =
-  return (img: flipImage(tile.img), sides: flipSides(tile.sides))
+proc flipTile(tile: var Tile) =
+  tile.rotation = 0
+  tile.flipped = not tile.flipped
+  tile.sides = flipSides(tile.sides)
 
-iterator orientations(tile: Tile): Tile =
-  var tile = tile
-  for _ in 0..<4:
+proc realizeImg(tile: var Tile) =
+  if tile.flipped:
+    for _ in 0..<3:
+      tile.img = rotateImage(tile.img)
+    tile.img = flipImage(tile.img)
+  for _ in 0..<tile.rotation:
+    tile.img = rotateImage(tile.img)
+
+  tile.rotation = 0
+  tile.flipped = false
+
+iterator orientations(tile: var Tile): var Tile =
+  for _ in 0..<3:
     yield tile
-    tile = rotateTile(tile)
-  tile = flipTile(tile)
-  for _ in 0..<4:
+    rotateTile(tile)
+  yield tile
+  flipTile(tile)
+  for _ in 0..<3:
     yield tile
-    tile = rotateTile(tile)
+    rotateTile(tile)
+  yield tile
 
 iterator orientations(image: seq[string]): seq[string] =
   var image = image
-  for _ in 0..<4:
+  for _ in 0..<3:
     yield image
     image = rotateImage(image)
+  yield image
   image = flipImage(image)
-  for _ in 0..<4:
+  for _ in 0..<3:
     yield image
     image = rotateImage(image)
+  yield image
 
 proc is_vert_adj(upper: Tile, lower: Tile): bool =
   upper.sides[2] == lower.sides[0]
@@ -93,7 +113,7 @@ proc is_horz_adj(left: Tile, right: Tile): bool =
 ################################################################################
 # Part 1
 
-proc make_image(tiles: Table[int, Tile], path: seq[seq[int]]): seq[string] =
+proc make_image(tiles: var Table[int, Tile], path: seq[seq[int]]): seq[string] =
   let size = tiles[path[0][0]].img.len
 
   # Strip borders.
@@ -101,6 +121,7 @@ proc make_image(tiles: Table[int, Tile], path: seq[seq[int]]): seq[string] =
     for y in 1..<size-1:
       var line = ""
       for idx in row:
+        realizeImg(tiles[idx])
         line &= tiles[idx].img[y][1..^2]
       result.add(line)
 
@@ -121,7 +142,7 @@ proc scan_next_row(tiles: var Table[int, Tile], size: int, path: var seq[seq[int
       backup = tiles[i]
       upper = if path.len > 1: path[^2][0] else: -1
 
-    for candidate in orientations(backup):
+    for candidate in orientations(tiles[i]):
       if upper == -1 or is_vert_adj(tiles[upper], candidate):
         tiles[i] = candidate
         let soln = scan_right(tiles, size, i, path)
@@ -163,7 +184,7 @@ proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[
   for i in not_visited(tiles, path):
     let backup = tiles[i]
 
-    for candidate in orientations(backup):
+    for candidate in orientations(tiles[i]):
       if is_horz_adj(cur, candidate) and (upper == -1 or is_vert_adj(tiles[upper], cur)):
         tiles[i] = candidate
         let soln = scan_right(tiles, size, i, path)
@@ -212,9 +233,9 @@ proc draw_monsters(map: seq[string], coords: seq[(int, int)], monster: seq[strin
     stdout.write("\n")
 
 proc find_monsters(map: seq[string], monster: seq[string]): int =
-  let monster_hash = img_hash(monster)
+  let monster_mask = img_hash(monster)
   var coords = newSeq[(int, int)]()
-  
+
   # Sliding window.
   for r in 0..<map.len - 3:
     for c in 0..<map[0].len - 20:
@@ -223,7 +244,7 @@ proc find_monsters(map: seq[string], monster: seq[string]): int =
         map[r+1][c..<c+20],
         map[r+2][c..<c+20],
       ]
-      if (img_hash(window) and monster_hash) == monster_hash:
+      if (img_hash(window) and monster_mask) == monster_mask:
         coords.add((r, c))
 
   if coords.len > 0:

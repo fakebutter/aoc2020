@@ -55,7 +55,7 @@ proc rev*(s: string): string =
   result = s
   result.reverse()
 
-proc deleteKeys*[A,B](table: TableRef[A,B], keys: seq[A]) =
+proc deleteKeys*[A,B](table: TableRef[A,B], keys: openArray[A]) =
   for k in keys:
     table.del(k)
 
