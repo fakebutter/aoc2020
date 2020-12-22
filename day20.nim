@@ -11,12 +11,12 @@ type
     rotation: int
     flipped: bool
     img: seq[string]
-    sides: seq[string]
+    sides: seq[uint16]
   Soln = tuple
     product: int
     img: seq[string]
 
-proc newTile(img: seq[string], sides: seq[string]): Tile =
+proc newTile(img: seq[string], sides: seq[uint16]): Tile =
   new(result)
   result.rotation = 0
   result.flipped = false
@@ -30,6 +30,12 @@ proc clone(tile: Tile): Tile =
   result.img = tile.img
   result.sides = tile.sides
 
+proc parse_side(s: string): uint16 =
+  for i in 0..<10:
+    result = result shr 1
+    if s[i] == '#':
+      result = result or 0x0200
+
 proc parse_tile(lines: seq[string]): (int, Tile) =
   let
     idx = parseInt(lines[0].split(" ")[1][0..^2])
@@ -41,14 +47,22 @@ proc parse_tile(lines: seq[string]): (int, Tile) =
       img.mapIt(it[^1]).join(""),
       img[^1],
       img.mapIt(it[0]).join(""),
-    ]
+    ].map(parse_side)
   return (idx, newTile(img, sides))
 
-proc rotateSides(sides: seq[string]): seq[string] =
+proc reverse(v: uint16): uint16 =
+  var v = v
+  for _ in 0..<10:
+    result = result shl 1
+    if (v and 0x01) > 0:
+      result = result or 0x01
+    v = v shr 1
+
+proc rotateSides(sides: seq[uint16]): seq[uint16] =
   return @[
-    sides[3].rev,
+    sides[3].reverse,
     sides[0],
-    sides[1].rev,
+    sides[1].reverse,
     sides[2],
   ]
 
@@ -59,11 +73,11 @@ proc rotateImage(img: seq[string]): seq[string] =
     for c in 0..<size:
       result[c][size-r-1] = img[r][c]
 
-proc flipSides(sides: seq[string]): seq[string] =
+proc flipSides(sides: seq[uint16]): seq[uint16] =
   return @[
-    sides[0].rev,
+    sides[0].reverse,
     sides[3],
-    sides[2].rev,
+    sides[2].reverse,
     sides[1],
   ]
 
