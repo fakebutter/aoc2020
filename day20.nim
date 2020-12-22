@@ -1,4 +1,5 @@
 import math
+import options
 import sequtils
 import strutils
 import sugar
@@ -24,12 +25,12 @@ proc newTile(img: seq[string], sides: Sides): Tile =
   result.img = img
   result.sides = sides
 
-proc clone(tile: Tile): Tile =
-  new(result)
-  result.rotation = tile.rotation
-  result.flipped = tile.flipped
-  result.img = tile.img
-  result.sides = tile.sides
+template withRestoreTile(tile: var Tile, body: untyped) =
+  let backup = tile.sides
+  body
+  tile.rotation = 0
+  tile.flipped = false
+  tile.sides = backup
 
 proc parse_side(s: string): uint16 =
   for i in 0..<10:
@@ -154,33 +155,37 @@ proc make_image(tiles: TableRef[int, Tile], path: seq[seq[int]]): seq[string] =
         line &= tiles[idx].img[y][1..^2]
       result.add(line)
 
-iterator not_visited(tiles: TableRef[int, Tile], path: seq[seq[int]]): int =
-  let visited = path.concat()
-  for idx in tiles.keys:
-    if idx notin visited:
-      yield idx
+proc visited(idx: int, path: seq[seq[int]]): bool =
+  for p in path:
+    if idx in p:
+      return true
+
+proc get_upper(tiles: TableRef[int, Tile], path: seq[seq[int]]): Option[Tile] =
+  if path.len == 1:
+    return none(Tile)
+  elif path[^1].len > 0:
+    return some(tiles[path[^2][path[^1].len-1]])
+  else:
+    return some(tiles[path[^2][0]])
 
 proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
 
 proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]]): Soln =
   path.add(newSeq[int]())
+  let upper = get_upper(tiles, path)
 
   # Find possible start of next row.
-  for i in not_visited(tiles, path):
-    let
-      backup = tiles[i].clone
-      upper = if path.len > 1: path[^2][0] else: -1
+  for i in tiles.keys:
+    if visited(i, path):
+      continue
 
-    for candidate in orientations(tiles[i]):
-      if upper == -1 or is_vert_adj(tiles[upper], candidate):
-        tiles[i] = candidate
-        let soln = scan_right(tiles, size, i, path)
-        if soln.product != 0:
-          tiles[i] = backup
-          discard path.pop()
-          return soln
-
-    tiles[i] = backup
+    withRestoreTile(tiles[i]):
+      for candidate in orientations(tiles[i]):
+        if upper.map((u) => is_vert_adj(u, candidate)) != some(false):
+          let soln = scan_right(tiles, size, i, path)
+          if soln.product != 0:
+            discard path.pop()
+            return soln
 
   discard path.pop()
 
@@ -207,22 +212,20 @@ proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[s
 
   let
     cur = tiles[idx]
-    upper = if path.len > 1: path[^2][path[^1].len-1] else: -1
+    upper = get_upper(tiles, path)
 
   # Find next possible tile on the right.
-  for i in not_visited(tiles, path):
-    let backup = tiles[i].clone
+  for i in tiles.keys:
+    if visited(i, path):
+      continue
 
-    for candidate in orientations(tiles[i]):
-      if is_horz_adj(cur, candidate) and (upper == -1 or is_vert_adj(tiles[upper], cur)):
-        tiles[i] = candidate
-        let soln = scan_right(tiles, size, i, path)
-        if soln.product != 0:
-          tiles[i] = backup
-          discard path[^1].pop()
-          return soln
-
-    tiles[i] = backup
+    withRestoreTile(tiles[i]):
+      for candidate in orientations(tiles[i]):
+        if is_horz_adj(cur, candidate) and (upper.map((u) => is_vert_adj(u, cur)) != some(false)):
+          let soln = scan_right(tiles, size, i, path)
+          if soln.product != 0:
+            discard path[^1].pop()
+            return soln
 
   discard path[^1].pop()
 
@@ -289,13 +292,14 @@ proc part2(image: seq[string], monster: seq[string]): int =
 
 ################################################################################
 
-var tiles = newTable(toSeq(get_lines().split((l) => l == "")).map(parse_tile))
+let raw_tiles = toSeq(get_lines().split((l) => l == ""))
+var tiles = newTable(raw_tiles.map(parse_tile))
 let
   size = int(sqrt(float(tiles.len)))
   monster = """
-                  # 
-#    ##    ##    ###
- #  #  #  #  #  #   """.split("\n")
+                      # 
+    #    ##    ##    ###
+     #  #  #  #  #  #   """.dedent.split("\n")
 
 let soln = part1(tiles, size)
 echo "Product: ", soln.product
