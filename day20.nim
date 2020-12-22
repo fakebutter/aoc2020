@@ -7,16 +7,17 @@ import terminal
 import utils
 
 type
+  Sides = array[4, uint16]
   Tile = ref object
     rotation: int
     flipped: bool
     img: seq[string]
-    sides: seq[uint16]
+    sides: Sides
   Soln = tuple
     product: int
     img: seq[string]
 
-proc newTile(img: seq[string], sides: seq[uint16]): Tile =
+proc newTile(img: seq[string], sides: Sides): Tile =
   new(result)
   result.rotation = 0
   result.flipped = false
@@ -42,12 +43,12 @@ proc parse_tile(lines: seq[string]): (int, Tile) =
     img = lines[1..^1]
 
     # Store borders separately for easier matching.
-    sides = @[
-      img[0],
-      img.mapIt(it[^1]).join(""),
-      img[^1],
-      img.mapIt(it[0]).join(""),
-    ].map(parse_side)
+    sides = [
+      parse_side(img[0]),
+      parse_side(img.mapIt(it[^1]).join("")),
+      parse_side(img[^1]),
+      parse_side(img.mapIt(it[0]).join("")),
+    ]
   return (idx, newTile(img, sides))
 
 proc reverse(v: uint16): uint16 =
@@ -58,8 +59,8 @@ proc reverse(v: uint16): uint16 =
       result = result or 0x01
     v = v shr 1
 
-proc rotateSides(sides: seq[uint16]): seq[uint16] =
-  return @[
+proc rotateSides(sides: Sides): Sides =
+  return [
     sides[3].reverse,
     sides[0],
     sides[1].reverse,
@@ -73,8 +74,8 @@ proc rotateImage(img: seq[string]): seq[string] =
     for c in 0..<size:
       result[c][size-r-1] = img[r][c]
 
-proc flipSides(sides: seq[uint16]): seq[uint16] =
-  return @[
+proc flipSides(sides: Sides): Sides =
+  return [
     sides[0].reverse,
     sides[3],
     sides[2].reverse,
