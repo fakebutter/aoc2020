@@ -7,7 +7,7 @@ import terminal
 import utils
 
 type
-  Tile = tuple
+  Tile = ref object
     rotation: int
     flipped: bool
     img: seq[string]
@@ -15,6 +15,20 @@ type
   Soln = tuple
     product: int
     img: seq[string]
+
+proc newTile(img: seq[string], sides: seq[string]): Tile =
+  new(result)
+  result.rotation = 0
+  result.flipped = false
+  result.img = img
+  result.sides = sides
+
+proc clone(tile: Tile): Tile =
+  new(result)
+  result.rotation = tile.rotation
+  result.flipped = tile.flipped
+  result.img = tile.img
+  result.sides = tile.sides
 
 proc parse_tile(lines: seq[string]): (int, Tile) =
   let
@@ -28,7 +42,7 @@ proc parse_tile(lines: seq[string]): (int, Tile) =
       img[^1],
       img.mapIt(it[0]).join(""),
     ]
-  return (idx, (rotation: 0, flipped: false, img: img, sides: sides))
+  return (idx, newTile(img, sides))
 
 proc rotateSides(sides: seq[string]): seq[string] =
   return @[
@@ -60,17 +74,17 @@ proc flipImage(img: seq[string]): seq[string] =
     for c in 0..<size:
       result[r][size-c-1] = img[r][c]
 
-proc rotateTile(tile: var Tile) =
+proc rotateTile(tile: Tile) =
   tile.rotation = (tile.rotation + 1) mod 4
   tile.flipped = tile.flipped
   tile.sides = rotateSides(tile.sides)
 
-proc flipTile(tile: var Tile) =
+proc flipTile(tile: Tile) =
   tile.rotation = 0
   tile.flipped = not tile.flipped
   tile.sides = flipSides(tile.sides)
 
-proc realizeImg(tile: var Tile) =
+proc realizeImg(tile: Tile) =
   if tile.flipped:
     for _ in 0..<3:
       tile.img = rotateImage(tile.img)
@@ -81,7 +95,7 @@ proc realizeImg(tile: var Tile) =
   tile.rotation = 0
   tile.flipped = false
 
-iterator orientations(tile: var Tile): var Tile =
+iterator orientations(tile: Tile): Tile =
   for _ in 0..<3:
     yield tile
     rotateTile(tile)
@@ -113,7 +127,7 @@ proc is_horz_adj(left: Tile, right: Tile): bool =
 ################################################################################
 # Part 1
 
-proc make_image(tiles: var Table[int, Tile], path: seq[seq[int]]): seq[string] =
+proc make_image(tiles: TableRef[int, Tile], path: seq[seq[int]]): seq[string] =
   let size = tiles[path[0][0]].img.len
 
   # Strip borders.
@@ -125,21 +139,21 @@ proc make_image(tiles: var Table[int, Tile], path: seq[seq[int]]): seq[string] =
         line &= tiles[idx].img[y][1..^2]
       result.add(line)
 
-iterator not_visited(tiles: Table[int, Tile], path: seq[seq[int]]): int =
+iterator not_visited(tiles: TableRef[int, Tile], path: seq[seq[int]]): int =
   let visited = path.concat()
   for idx in tiles.keys:
     if idx notin visited:
       yield idx
 
-proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
+proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
 
-proc scan_next_row(tiles: var Table[int, Tile], size: int, path: var seq[seq[int]]): Soln =
+proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]]): Soln =
   path.add(newSeq[int]())
 
   # Find possible start of next row.
   for i in not_visited(tiles, path):
     let
-      backup = tiles[i]
+      backup = tiles[i].clone
       upper = if path.len > 1: path[^2][0] else: -1
 
     for candidate in orientations(tiles[i]):
@@ -155,7 +169,7 @@ proc scan_next_row(tiles: var Table[int, Tile], size: int, path: var seq[seq[int
 
   discard path.pop()
 
-proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
+proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
   path[^1].add(idx)
 
   # Row is full.
@@ -182,7 +196,7 @@ proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[
 
   # Find next possible tile on the right.
   for i in not_visited(tiles, path):
-    let backup = tiles[i]
+    let backup = tiles[i].clone
 
     for candidate in orientations(tiles[i]):
       if is_horz_adj(cur, candidate) and (upper == -1 or is_vert_adj(tiles[upper], cur)):
@@ -197,7 +211,7 @@ proc scan_right(tiles: var Table[int, Tile], size: int, idx: int, path: var seq[
 
   discard path[^1].pop()
 
-proc part1(tiles: var Table[int, Tile], size: int): Soln =
+proc part1(tiles: TableRef[int, Tile], size: int): Soln =
   var path = newSeq[seq[int]]()
   let soln = scan_next_row(tiles, size, path)
   if soln.product != 0:
@@ -248,6 +262,7 @@ proc find_monsters(map: seq[string], monster: seq[string]): int =
         coords.add((r, c))
 
   if coords.len > 0:
+    # For funsies.
     draw_monsters(map, coords, monster)
     return map.join("").count('#') - coords.len * monster.join("").count('#')
 
@@ -259,7 +274,7 @@ proc part2(image: seq[string], monster: seq[string]): int =
 
 ################################################################################
 
-var tiles = toSeq(get_lines().split((l) => l == "")).map(parse_tile).toTable
+var tiles = newTable(toSeq(get_lines().split((l) => l == "")).map(parse_tile))
 let
   size = int(sqrt(float(tiles.len)))
   monster = """
