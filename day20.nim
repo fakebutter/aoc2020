@@ -17,6 +17,8 @@ type
   Soln = tuple
     product: int
     img: seq[string]
+let
+  NoSoln: Soln = (0, @[])
 
 proc newTile(img: seq[string], sides: Sides): Tile =
   new(result)
@@ -146,12 +148,15 @@ proc is_horz_adj(left: Tile, right: Tile): bool =
 proc make_image(tiles: TableRef[int, Tile], path: seq[seq[int]]): seq[string] =
   let size = tiles[path[0][0]].img.len
 
+  for row in path:
+    for idx in row:
+      realizeImg(tiles[idx])
+
   # Strip borders.
   for row in path:
     for y in 1..<size-1:
       var line = ""
       for idx in row:
-        realizeImg(tiles[idx])
         line &= tiles[idx].img[y][1..^2]
       result.add(line)
 
@@ -172,6 +177,7 @@ proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[s
 
 proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]]): Soln =
   path.add(newSeq[int]())
+  defer: discard path.pop()
   let upper = get_upper(tiles, path)
 
   # Find possible start of next row.
@@ -183,32 +189,27 @@ proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]
       for candidate in orientations(tiles[i]):
         if upper.map((u) => is_vert_adj(u, candidate)) != some(false):
           let soln = scan_right(tiles, size, i, path)
-          if soln.product != 0:
-            discard path.pop()
+          if soln != NoSoln:
             return soln
-
-  discard path.pop()
 
 proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
   path[^1].add(idx)
+  defer: discard path[^1].pop()
 
   # Row is full.
   if path[^1].len == size:
     if path.len < size:
       let soln = scan_next_row(tiles, size, path)
-      if soln.product != 0:
-        discard path[^1].pop()
+      if soln != NoSoln:
         return soln
     else:
       # Solution
       let
         prod = path[0][0] * path[0][^1] * path[^1][0] * path[^1][^1]
         img = make_image(tiles, path)
-      discard path[^1].pop()
       return (prod, img)
 
-    discard path[^1].pop()
-    return (0, @[])
+    return NoSoln
 
   let
     cur = tiles[idx]
@@ -223,28 +224,24 @@ proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[s
       for candidate in orientations(tiles[i]):
         if is_horz_adj(cur, candidate) and (upper.map((u) => is_vert_adj(u, cur)) != some(false)):
           let soln = scan_right(tiles, size, i, path)
-          if soln.product != 0:
-            discard path[^1].pop()
+          if soln != NoSoln:
             return soln
-
-  discard path[^1].pop()
 
 proc part1(tiles: TableRef[int, Tile], size: int): Soln =
   var path = newSeq[seq[int]]()
   let soln = scan_next_row(tiles, size, path)
-  if soln.product != 0:
+  if soln != NoSoln:
     return soln
 
 ################################################################################
 # Part 2
 
-proc img_hash(raw: seq[string]): uint64 =
-  for row in raw:
-    for pix in row.items:
+proc img_hash(raw: seq[string], h, w: int, r, c: int = 0): uint64 =
+  for row in raw[r..<r+h]:
+    for pix in row[c..<c+w].items:
+      result = result shl 1
       if pix == '#':
-        result = (result shl 1) or 1
-      else:
-        result = (result shl 1) or 0
+        result = result or 1
 
 proc draw_monsters(map: seq[string], coords: seq[(int, int)], monster: seq[string]) =
   var map = map
@@ -259,24 +256,20 @@ proc draw_monsters(map: seq[string], coords: seq[(int, int)], monster: seq[strin
       if c == 'O':
         setForegroundColor(stdout, fgRed)
         stdout.write('O')
-        resetAttributes(stdout)
       else:
+        setForegroundColor(stdout, fgCyan)
         stdout.write(c)
     stdout.write("\n")
+  resetAttributes(stdout)
 
 proc find_monsters(map: seq[string], monster: seq[string]): int =
-  let monster_mask = img_hash(monster)
+  let monster_mask = img_hash(monster, 3, 20)
   var coords = newSeq[(int, int)]()
 
   # Sliding window.
   for r in 0..<map.len - 3:
     for c in 0..<map[0].len - 20:
-      let window = @[
-        map[r][c..<c+20],
-        map[r+1][c..<c+20],
-        map[r+2][c..<c+20],
-      ]
-      if (img_hash(window) and monster_mask) == monster_mask:
+      if (img_hash(map, 3, 20, r, c) and monster_mask) == monster_mask:
         coords.add((r, c))
 
   if coords.len > 0:
@@ -294,9 +287,8 @@ proc part2(image: seq[string], monster: seq[string]): int =
 
 let raw_tiles = toSeq(get_lines().split((l) => l == ""))
 var tiles = newTable(raw_tiles.map(parse_tile))
-let
-  size = int(sqrt(float(tiles.len)))
-  monster = """
+let size = int(sqrt(float(tiles.len)))
+const monster = """
                       # 
     #    ##    ##    ###
      #  #  #  #  #  #   """.dedent.split("\n")
