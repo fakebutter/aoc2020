@@ -12,16 +12,13 @@ let Step: Table[string, V2] = {
   "ne": (+5, 10)
 }.toTable
 
-proc adj(x, y: int): seq[V2] =
-  toSeq(Step.values).mapIt((x, y) + it)
-
-proc adj(coord: V2): seq[V2] =
-  adj(coord.x, coord.y)
+proc getAdj(coord: V2): seq[V2] =
+  toSeq(Step.values).mapIt(coord + it)
 
 proc countAdj(tiles: var Table[V2, bool], coord: V2): V2 =
   var whiteCount, blackCount: int
-  for n in adj(coord):
-    let white = tiles.getOrDefault(n, true)
+  for adj in getAdj(coord):
+    let white = tiles.getOrDefault(adj, true)
     if white:
       whiteCount += 1
     else:
@@ -38,13 +35,13 @@ proc part1(tiles: var Table[V2, bool], dirs: seq[seq[string]]): int =
   return toSeq(tiles.values).count(false)
 
 proc part2(tiles: var Table[V2, bool]): int =
-  for i in 1..100:
+  for _ in 1..100:
     # Materialize adjacent white tiles as they may need to be flipped.
     for (coord, isWhite) in toSeq(tiles.pairs):
       if not isWhite:
-        for n in adj(coord):
-          if tiles.getOrDefault(n, true):
-            tiles[n] = true
+        for adj in getAdj(coord):
+          if tiles.getOrDefault(adj, true):
+            tiles[adj] = true
 
     var toFlip = newSeq[V2]()
 

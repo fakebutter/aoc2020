@@ -1,4 +1,3 @@
-import math
 import sequtils
 import strutils
 
@@ -23,13 +22,7 @@ proc newLinkedList(size: int): LinkedList =
 proc `[]`(cups: LinkedList, value: int): Node =
   cups.lookup[value]
 
-proc next(cups: LinkedList, node: Node): Node =
-  if node.next == nil:
-    return cups.head
-  else:
-    return node.next
-
-proc append(cups: var LinkedList, value: int): Node =
+proc append(cups: var LinkedList, value: int) =
   var newNode = newNode(value)
 
   cups.lookup[value] = newNode
@@ -41,41 +34,32 @@ proc append(cups: var LinkedList, value: int): Node =
   else:
     cups.tail.next = newNode
     cups.tail = newNode
-  return newNode
+  newNode.next = cups.head
 
 proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
   var
-    rest = node.next
-    node = node
+    cur = node
+    rest = cur.next
 
   for value in values:
-    node.next = cups.lookup[value]
-    node = node.next
+    cur.next = cups.lookup[value]
+    cur = cur.next
 
-  node.next = rest
-  if node.next == nil:
-    cups.tail = node
+  cur.next = rest
 
-proc extractAfter(cups: var LinkedList, after: Node, size: int): seq[int] =
-  var
-    node = cups.next(after)
-    wrapped = node == cups.head
+proc extractAfter(cups: var LinkedList, node: Node, size: int): seq[int] =
+  var cur = node.next
 
   for _ in 1..size:
-    result.add(node.value)
-    node = cups.next(node)
-    wrapped = node == cups.head
+    result.add(cur.value)
+    cur = cur.next
 
-  if wrapped:
-    cups.tail = after
-    after.next = nil
-  else:
-    after.next = node
+  node.next = cur
 
 proc calcDest(cur: int, taken: seq[int], max: int): int =
-  result = floorMod(cur - 1 - 1, max) + 1
+  result = if cur == 1: max else: cur - 1
   while result in taken:
-    result = floorMod(result - 1 - 1, max) + 1
+    result = if result == 1: max else: result - 1
 
 proc part1(cups: seq[int]): int =
   let cupsMax = cups.max
@@ -108,10 +92,10 @@ proc part2(cups: var LinkedList): int =
     var node = cups[insAft]
     cups.insertAfter(node, take)
 
-    cur = cups.next(cur)
+    cur = cur.next
 
-  var node = cups[1]
-  return cups.next(node).value * cups.next(cups.next(node)).value
+  let node = cups[1]
+  return node.next.value * node.next.next.value
 
 let input = toSeq("326519478".items).mapIt(parseInt($it))
 
@@ -119,7 +103,7 @@ echo part1(input)
 
 var cups = newLinkedList(1_000_001)
 for c in input:
-  discard cups.append(c)
+  cups.append(c)
 for c in input.max+1..1_000_000:
-  discard cups.append(c)
+  cups.append(c)
 echo part2(cups)
