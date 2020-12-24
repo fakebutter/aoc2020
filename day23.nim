@@ -107,7 +107,6 @@ proc part2(cups: var LinkedList): int =
     var insAft = calcDest(cur.value, take, cupsMax)
     var node = cups[insAft]
     cups.insertAfter(node, take)
-    node = node.next
 
     cur = cups.next(cur)
 
