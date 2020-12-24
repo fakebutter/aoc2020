@@ -39,14 +39,14 @@ proc part1(tiles: var Table[V2, bool], dirs: seq[seq[string]]): int =
 
 proc part2(tiles: var Table[V2, bool]): int =
   for i in 1..100:
-    var toFlip = newSeq[V2]()
-
+    # Materialize adjacent white tiles as they may need to be flipped.
     for (coord, isWhite) in toSeq(tiles.pairs):
       if not isWhite:
-        # Materialize adjacent white tiles as they may need to be flipped.
         for n in adj(coord):
           if tiles.getOrDefault(n, true):
             tiles[n] = true
+
+    var toFlip = newSeq[V2]()
 
     for (coord, isWhite) in tiles.pairs:
       let (_, adjBlack) = countAdj(tiles, coord)
