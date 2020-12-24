@@ -1,153 +1,126 @@
+import math
 import sequtils
 import strutils
 
 type
-  Range = ref object
+  Node = ref object
     value: int
-    prev, next: Range
-  Rope = ref object
-    head: Range
-    tail: Range
-    lookup: seq[Range]
+    next: Node
+  LinkedList = ref object
+    head: Node
+    tail: Node
+    lookup: seq[Node]
     max: int
 
-proc newRange(value: int): Range =
+proc newNode(value: int): Node =
   new(result)
   result.value = value
 
-proc newRope(size: int): Rope =
+proc newLinkedList(size: int): LinkedList =
   new(result)
-  result.lookup = newSeq[Range](size)
+  result.lookup = newSeq[Node](size)
 
-proc `[]`(rope: Rope, value: int): Range =
-  rope.lookup[value]
+proc `[]`(cups: LinkedList, value: int): Node =
+  cups.lookup[value]
 
-proc append(rope: var Rope, value: int): Range =
-  var
-    newNode = newRange(value)
+proc next(cups: LinkedList, node: Node): Node =
+  if node.next == nil:
+    return cups.head
+  else:
+    return node.next
 
-  rope.lookup[value] = newNode
-  rope.max = max(rope.max, value)
+proc append(cups: var LinkedList, value: int): Node =
+  var newNode = newNode(value)
 
-  if rope.head == nil:
-    rope.head = newNode
-    rope.tail = newNode
-    return newNode
+  cups.lookup[value] = newNode
+  cups.max = max(cups.max, value)
 
-  rope.tail.next = newNode
-  newNode.prev = rope.tail
-  rope.tail = newNode
+  if cups.head == nil:
+    cups.head = newNode
+    cups.tail = newNode
+  else:
+    cups.tail.next = newNode
+    cups.tail = newNode
   return newNode
 
-proc insertAfter(rope: var Rope, node: Range, value: int): Range =
+proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
   var
     rest = node.next
-    newNode = newRange(value)
+    node = node
 
-  rope.lookup[value] = newNode
-  rope.max = max(rope.max, value)
+  for value in values:
+    node.next = cups.lookup[value]
+    node = node.next
 
-  node.next = newNode
-  newNode.prev = node
-  if rest != nil:
-    newNode.next = rest
-    rest.prev = newNode
-  else:
-    rope.tail = newNode
+  node.next = rest
+  if node.next == nil:
+    cups.tail = node
 
-  return newNode
-
-proc extract(rope: var Rope, after: int, size: int): seq[int] =
-  let afterNode = rope.lookup[after]
-  var node = afterNode
+proc extractAfter(cups: var LinkedList, after: Node, size: int): seq[int] =
+  var
+    node = cups.next(after)
+    wrapped = node == cups.head
 
   for _ in 1..size:
-    node = node.next
-    if node == nil:
-      node = rope.head
     result.add(node.value)
+    node = cups.next(node)
+    wrapped = node == cups.head
 
-  var rest = node.next
-  afterNode.next = rest
-  if rest != nil:
-    rest.prev = afterNode
+  if wrapped:
+    cups.tail = after
+    after.next = nil
+  else:
+    after.next = node
 
-proc part1(cards: seq[int]): int =
+proc calcDest(cur: int, taken: seq[int], max: int): int =
+  result = floorMod(cur - 1 - 1, max) + 1
+  while result in taken:
+    result = floorMod(result - 1 - 1, max) + 1
+
+proc part1(cups: seq[int]): int =
+  let cupsMax = cups.max
   var
-    cards = cards
+    cups = cups
     curIdx = 0
-  let
-    cardsMax = cards.max
 
   for _ in 1..100:
-    let cur = cards[curIdx]
-    var take = cards.cycle(2)[curIdx+1..curIdx+3]
-    cards.keepItIf(it notin take)
-    
-    var insAft = cur - 1
-    if insAft == 0:
-      insAft = cardsMax
-    while insAft in take:
-      insAft = insAft - 1
-      if insAft == 0:
-        insAft = cardsMax
-    
-    var insIdx = cards.find(insAft) + 1
-    for i in 0..2:
-      cards.insert(take[i], insIdx+i)
-      
-    curIdx = (cards.find(cur) + 1) mod cards.len
-    
-  var i = (cards.find(1) + 1) mod cards.len
-  return parseInt(cards.cycle(2)[i..<i+cards.len-1].mapIt($it).join())
+    let cur = cups[curIdx]
+    var take = cups.cycle(2)[curIdx+1..curIdx+3]
+    cups.keepItIf(it notin take)
 
-proc part2(cards: var Rope): int =
-  let
-    cardsMax = cards.max
-  var cur = cards.head.value
+    var insAft = calcDest(cur, take, cupsMax)
+    var insIdx = cups.find(insAft) + 1
+    for i in 0..2:
+      cups.insert(take[i], insIdx+i)
+
+    curIdx = (cups.find(cur) + 1) mod cups.len
+
+  var i = (cups.find(1) + 1) mod cups.len
+  return parseInt(cups.cycle(2)[i..<i+cups.len-1].mapIt($it).join())
+
+proc part2(cups: var LinkedList): int =
+  let cupsMax = cups.max
+  var cur = cups.head
 
   for round in 1..10_000_000:
-    if round mod 1_000_000 == 0:
-      stdout.write(".")
-      flushFile(stdout)
-
-    var take = cards.extract(cur, 3)
-    
-    var insAft = cur - 1
-    if insAft == 0:
-      insAft = cardsMax
-    while insAft in take:
-      insAft = insAft - 1
-      if insAft == 0:
-        insAft = cardsMax
-    
-    var node = cards[insAft]
-    for i in 0..2:
-      discard cards.insertAfter(node, take[i])
-      node = node.next
-
-    if cards[cur].next == nil:
-      cur = cards.head.value
-    else:
-      cur = cards[cur].next.value
-
-  echo()
-    
-  result = 1
-  var node = cards[1]
-  for i in 1..2:
+    var take = cups.extractAfter(cur, 3)
+    var insAft = calcDest(cur.value, take, cupsMax)
+    var node = cups[insAft]
+    cups.insertAfter(node, take)
     node = node.next
-    if node == nil:
-      node = cards.head
-    result *= node.value
 
-let cards = toSeq("326519478".items).mapIt(parseInt($it))
+    cur = cups.next(cur)
 
-echo part1(cards)
+  var node = cups[1]
+  return cups.next(node).value * cups.next(cups.next(node)).value
 
-var rope = newRope(1_000_001)
-for c in cards:
-  discard rope.append(c)
-for c in cards.max+1..1_000_000:
-  discard rope.append(c)
-echo part2(rope)
+let input = toSeq("326519478".items).mapIt(parseInt($it))
+
+echo part1(input)
+
+var cups = newLinkedList(1_000_001)
+for c in input:
+  discard cups.append(c)
+for c in input.max+1..1_000_000:
+  discard cups.append(c)
+echo part2(cups)
