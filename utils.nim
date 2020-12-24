@@ -5,6 +5,19 @@ import sets
 import sugar
 import tables
 
+type
+  Pair*[T] = tuple
+    first, second: T
+  V2* = tuple
+    x, y: int
+  V3* = tuple
+    x, y, z: int
+  V4* = tuple
+    x, y, z, w: int
+
+proc `+`*(lhs: V2, rhs: V2): V2 =
+  (lhs.x + rhs.x, lhs.y + rhs.y)
+
 proc get_lines*(): seq[string] =
   result = newSeq[string]()
   var line: string
