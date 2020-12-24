@@ -55,11 +55,15 @@ proc rev*(s: string): string =
   result = s
   result.reverse()
 
-proc deleteKeys*[A,B](table: TableRef[A,B], keys: openArray[A]) =
+proc delete_keys*[A,B](table: TableRef[A,B], keys: openArray[A]) =
   for k in keys:
     table.del(k)
 
-proc deleteItems*[T](s: var seq[T], ds: HashSet[T]) =
+proc delete_keys*[A,B](table: var Table[A,B], keys: openArray[A]) =
+  for k in keys:
+    table.del(k)
+
+template delete_items*[T](s: var seq[T], ds: untyped) =
   s.keepItIf(it notin ds)
 
 macro cmp_by_idx*(idx: static[int]): untyped =
