@@ -16,7 +16,7 @@ proc adj(x, y: int): seq[V2] =
   toSeq(Step.values).mapIt((x, y) + it)
 
 proc adj(coord: V2): seq[V2] =
-  adj(coord[0], coord[1])
+  adj(coord.x, coord.y)
 
 proc countAdj(tiles: var Table[V2, bool], coord: V2): V2 =
   var whiteCount, blackCount: int
