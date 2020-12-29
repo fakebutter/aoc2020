@@ -1,5 +1,6 @@
 import sequtils
 import strutils
+import utils
 
 type
   Node = ref object
@@ -25,16 +26,17 @@ proc `[]`(cups: LinkedList, value: int): Node =
 proc append(cups: var LinkedList, value: int) =
   var newNode = newNode(value)
 
-  cups.lookup[value] = newNode
-  cups.max = max(cups.max, value)
-
   if cups.head == nil:
     cups.head = newNode
     cups.tail = newNode
   else:
     cups.tail.next = newNode
     cups.tail = newNode
+
   newNode.next = cups.head
+
+  cups.lookup[value] = newNode
+  cups.max = max(cups.max, value)
 
 proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
   var
@@ -42,6 +44,7 @@ proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
     rest = cur.next
 
   for value in values:
+    # Reuse
     cur.next = cups.lookup[value]
     cur = cur.next
 
@@ -69,41 +72,42 @@ proc part1(cups: seq[int]): int =
 
   for _ in 1..100:
     let cur = cups[curIdx]
-    var take = cups.cycle(2)[curIdx+1..curIdx+3]
-    cups.keepItIf(it notin take)
+    # Hehe
+    var extracted = cups.cycle(2)[curIdx+1..curIdx+3]
+    cups.keepItIf(it notin extracted)
 
-    var insAft = calcDest(cur, take, cupsMax)
-    var insIdx = cups.find(insAft) + 1
+    var dest = calcDest(cur, extracted, cupsMax)
+    var insIdx = cups.find(dest) + 1
     for i in 0..2:
-      cups.insert(take[i], insIdx+i)
+      cups.insert(extracted[i], insIdx+i)
 
     curIdx = (cups.find(cur) + 1) mod cups.len
 
   var i = (cups.find(1) + 1) mod cups.len
   return parseInt(cups.cycle(2)[i..<i+cups.len-1].mapIt($it).join())
 
-proc part2(cups: var LinkedList): int =
-  let cupsMax = cups.max
-  var cur = cups.head
+proc part2(cups: seq[int]): int =
+  var cupsList = newLinkedList(1_000_001)
+  for c in cups:
+    cupsList.append(c)
+  for c in cups.max+1..1_000_000:
+    cupsList.append(c)
+
+  let cupsMax = cupsList.max
+  var cur = cupsList.head
 
   for round in 1..10_000_000:
-    var take = cups.extractAfter(cur, 3)
-    var insAft = calcDest(cur.value, take, cupsMax)
-    var node = cups[insAft]
-    cups.insertAfter(node, take)
+    var
+      extracted = cupsList.extractAfter(cur, 3)
+      dest = calcDest(cur.value, extracted, cupsMax)
+      insAft = cupsList[dest]
+    cupsList.insertAfter(insAft, extracted)
 
     cur = cur.next
 
-  let node = cups[1]
+  let node = cupsList[1]
   return node.next.value * node.next.next.value
 
-let input = toSeq("326519478".items).mapIt(parseInt($it))
-
+let input = toSeq(getLines()[0].items).mapIt(parseInt($it))
 echo part1(input)
-
-var cups = newLinkedList(1_000_001)
-for c in input:
-  cups.append(c)
-for c in input.max+1..1_000_000:
-  cups.append(c)
-echo part2(cups)
+echo part2(input)
