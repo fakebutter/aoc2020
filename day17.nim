@@ -9,26 +9,26 @@ proc makePocket(lines: seq[string]): HashSet[V4] =
       if c == '#':
         result.incl((x, y, 0, 0))
 
-iterator getAdjacent3(x, y, z: int): V4 =
-  for nx in x-1..x+1:
-    for ny in y-1..y+1:
-      for nz in z-1..z+1:
-        if (nx, ny, nz) != (x, y, z):
-          yield (nx, ny, nz, 0)
+iterator getAdjacent3(pos: V4): V4 =
+  for x in pos.x-1..pos.x+1:
+    for y in pos.y-1..pos.y+1:
+      for z in pos.z-1..pos.z+1:
+        if (x, y, z, 0) != pos:
+          yield (x, y, z, 0)
 
-iterator getAdjacent4(x, y, z, w: int): V4 =
-  for nx in x-1..x+1:
-    for ny in y-1..y+1:
-      for nz in z-1..z+1:
-        for nw in w-1..w+1:
-          if (nx, ny, nz, nw) != (x, y, z, w):
-            yield (nx, ny, nz, nw)
+iterator getAdjacent4(pos: V4): V4 =
+  for x in pos.x-1..pos.x+1:
+    for y in pos.y-1..pos.y+1:
+      for z in pos.z-1..pos.z+1:
+        for w in pos.w-1..pos.w+1:
+          if (x, y, z, w) != pos:
+            yield (x, y, z, w)
 
 proc getAdjacent(pos: V4, dim: int): seq[V4] =
   if dim == 3:
-    return toSeq(getAdjacent3(pos.x, pos.y, pos.z))
+    return toSeq(getAdjacent3(pos))
   elif dim == 4:
-    return toSeq(getAdjacent4(pos.x, pos.y, pos.z, pos.w))
+    return toSeq(getAdjacent4(pos))
 
 proc countActiveNeighbors(pocket: var HashSet[V4], pos: V4, dim: int): int =
   getAdjacent(pos, dim).countIt(it in pocket)

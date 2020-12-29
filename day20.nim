@@ -286,7 +286,7 @@ proc part2(image: seq[string], monster: seq[string]): int =
 
 ################################################################################
 
-let rawTiles = toSeq(getLines().split((l) => l == ""))
+let rawTiles = getLines().split
 var tiles = newTable(rawTiles.map(parseTile))
 let size = int(sqrt(float(tiles.len)))
 const monster = """

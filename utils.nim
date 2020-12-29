@@ -2,6 +2,7 @@ import algorithm
 import macros
 import sequtils
 import sets
+import strutils
 import sugar
 import tables
 
@@ -18,12 +19,20 @@ type
 proc `+`*(lhs: V2, rhs: V2): V2 =
   (lhs.x + rhs.x, lhs.y + rhs.y)
 
-proc get_lines*(): seq[string] =
-  result = newSeq[string]()
+proc `+=`*(lhs: var V2, rhs: V2) =
+  lhs.x += rhs.x
+  lhs.y += rhs.y
+
+proc `*`*(lhs: V2, rhs: int): V2 =
+  (lhs.x * rhs, lhs.y * rhs)
+
+proc getLines*(): seq[string] =
   var line: string
   while readLine(stdin, line):
     result.add(line)
-  return result
+
+proc to2dArr*(lines: seq[string]): seq[seq[char]] =
+  lines.mapIt(toSeq it.items)
 
 iterator split*[T](items: seq[T], is_delim: (T) -> bool): seq[T] =
   var cur = newSeq[T]()
@@ -37,6 +46,9 @@ iterator split*[T](items: seq[T], is_delim: (T) -> bool): seq[T] =
 
   if cur.len > 0:
     yield cur
+
+proc split*(lines: seq[string]): seq[seq[string]] =
+  toSeq split(lines, (l) => l == "")
 
 proc sum*[T](items: seq[T]): T =
   items.foldl(a + b)
@@ -68,17 +80,56 @@ proc rev*(s: string): string =
   result = s
   result.reverse()
 
-proc delete_keys*[A,B](table: TableRef[A,B], keys: openArray[A]) =
+proc del*[A,B](table: TableRef[A,B], keys: openArray[A]) =
   for k in keys:
     table.del(k)
 
-proc delete_keys*[A,B](table: var Table[A,B], keys: openArray[A]) =
+proc del*[A,B](table: var Table[A,B], keys: openArray[A]) =
   for k in keys:
     table.del(k)
 
-template delete_items*[T](s: var seq[T], ds: untyped) =
+template deleteItems*[T](s: var seq[T], ds: untyped) =
   s.keepItIf(it notin ds)
 
-macro cmp_by_idx*(idx: static[int]): untyped =
+macro cmpByIdx*(idx: static[int]): untyped =
   result = quote do:
     (a, b) => (if a[`idx`] < b[`idx`]: -1 else: 1)
+
+proc flatMap*[T, S](items: seq[T], fun: (T) -> seq[S]): seq[S] =
+  items.map(fun).concat
+
+# https://github.com/Araq/metapar/blob/master/livedemo/curry.nim
+macro curry*(f: typed; args: varargs[untyped]): untyped =
+  let ty = getType(f)
+  assert($ty[0] == "proc", "first param is not a function")
+  let n_remaining = ty.len - 2 - args.len
+  assert n_remaining > 0, "cannot curry all the parameters"
+  #echo treerepr ty
+
+  var callExpr = newCall(f)
+  args.copyChildrenTo callExpr
+
+  var params: seq[NimNode] = @[]
+  # return type
+  params.add ty[1]
+
+  for i in 0..<n_remaining:
+    let param = ident("arg" & $i)
+    params.add newIdentDefs(param, ty[i+2+args.len])
+    callExpr.add param
+  result = newProc(procType = nnkLambda, params = params, body = callExpr)
+
+proc gcd*(a: int, b: int): int =
+  if b == 0:
+    return a
+  return gcd(b, a mod b)
+
+proc first*[T](hs: HashSet[T]): T =
+  for item in hs.items:
+    return item
+
+proc first*[T](s: seq[T]): T =
+  s[0]
+
+proc toInts*(strs: openArray[string]): seq[int] =
+  strs.map(parseInt)
