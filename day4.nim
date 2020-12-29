@@ -6,10 +6,10 @@ import sugar
 import tables
 import utils
 
-proc get_passports(lines: seq[string]): seq[string] =
-  toSeq(lines.split((l) => l == "")).mapIt(it.join(" "))
+proc parsePassports(lines: seq[string]): seq[string] =
+  lines.split.mapIt(it.join(" "))
 
-proc is_valid_field(key: string, value: string): bool =
+proc isValidField(key: string, value: string): bool =
   case key:
     of "byr":
       return value >= "1920" and value <= "2002"
@@ -31,20 +31,24 @@ proc is_valid_field(key: string, value: string): bool =
     of "pid":
       return value =~ re"^[0-9]{9}$"
 
-proc validate_passport(passport: string, validate_field: bool): bool =
-  var seen = {"byr": false, "iyr": false, "eyr": false, "hgt": false, "hcl": false, "ecl": false, "pid": false}.toTable
-    
-  for entry in passport.split(" ").filter((e) => e != ""):
-    let kv = entry.split(":")
-    if kv[0] in seen and (not validate_field or is_valid_field(kv[0], kv[1])):
+proc validatePassport(validateField: bool, passport: string): bool =
+  var seen = {
+    "byr": false, "iyr": false, "eyr": false, "hgt": false, "hcl": false, "ecl": false, "pid": false
+  }.toTable
+
+  for entry in passport.split:
+    let
+      kv = entry.split(":")
+      key = kv[0]
+      value = kv[1]
+    if key in seen and (not validateField or isValidField(key, value)):
       seen[kv[0]] = true
 
   return toSeq(seen.values).count(true) == 7
 
-proc run(passports: seq[string], validate_field: bool): int =
-  return passports
-    .countIt(validate_passport(it, validate_field))
+proc run(passports: seq[string], validator: (string) -> bool): int =
+  passports.countIt(validator(it))
 
-let passports = get_passports(get_lines())
-echo run(passports, false)
-echo run(passports, true)
+let passports = getLines().parsePassports
+echo run(passports, validatePassport.curry(false))
+echo run(passports, validatePassport.curry(true))

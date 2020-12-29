@@ -1,26 +1,22 @@
 import sequtils
 import utils
 
-proc make_map(lines: seq[string]): seq[seq[char]] =
-  lines.mapIt(toSeq(it.items))
-
-proc count_trees(map: seq[seq[char]], steps: (int, int)): int =
+proc countTrees(map: seq[seq[char]], step: V2): int =
   let
     width = map[0].len
-    (row_step, col_step) = steps
-  var row, col = 0
+    height = map.len
+  var cur: V2
 
-  while row < map.len:
-    if map[row][col] == '#':
+  while cur.y < height:
+    if map[cur.y][cur.x] == '#':
       result += 1
-    row += row_step
-    col = (col + col_step) mod width
+    cur += step; cur.x = cur.x mod width
 
-proc run(map: seq[seq[char]], steps: seq[(int, int)]): int =
-  return steps
-    .mapIt(count_trees(map, it))
+proc run(map: seq[seq[char]], steps: seq[V2]): int =
+  steps
+    .mapIt(countTrees(map, it))
     .product
 
-let map = make_map(get_lines())
-echo run(map, @[(1, 3)])
-echo run(map, @[(1, 1), (1, 3), (1, 5), (1, 7), (2, 1)])
+let map = getLines().to2dArr
+echo run(map, @[(3, 1)])
+echo run(map, @[(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)])

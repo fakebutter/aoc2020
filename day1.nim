@@ -1,6 +1,5 @@
 import itertools
 import sequtils
-import strutils
 import utils
 
 proc run(nums: seq[int], c: int): int =
@@ -8,6 +7,6 @@ proc run(nums: seq[int], c: int): int =
     if comb.sum == 2020:
       return comb.product
 
-let nums = get_lines().map(parseInt)
+let nums = getLines().toInts
 echo run(nums, 2)
 echo run(nums, 3)

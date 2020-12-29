@@ -2,25 +2,23 @@ import sequtils
 import strscans
 import utils
 
-proc part1_is_valid(line: string): bool =
+proc part1IsValid(line: string): bool =
   var
-    min_count, max_count: int
+    minCount, maxCount: int
     character, password: string
 
-  if scanf(line, "$i-$i $w: $+$.", min_count, max_count, character, password):
+  if scanf(line, "$i-$i $w: $+$.", minCount, maxCount, character, password):
     let count = toSeq(password.items).count(character[0])
-    return min_count <= count and count <= max_count
-  return false
+    return minCount <= count and count <= maxCount
 
-proc part2_is_valid(line: string): bool =
+proc part2IsValid(line: string): bool =
   var
     i, j: int
     character, password: string
 
   if scanf(line, "$i-$i $w: $+$.", i, j, character, password):
-    return password[i - 1] == character[0] xor password[j - 1] == character[0]
-  return false
+    return (password[i - 1] == character[0]) xor (password[j - 1] == character[0])
 
-let lines = get_lines()
-echo lines.countIt(part1_is_valid(it))
-echo lines.countIt(part2_is_valid(it))
+let lines = getLines()
+echo lines.countIt(part1IsValid(it))
+echo lines.countIt(part2IsValid(it))
