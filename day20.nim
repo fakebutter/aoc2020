@@ -34,23 +34,23 @@ template withRestoreTile(tile: var Tile, body: untyped) =
   tile.flipped = false
   tile.sides = backup
 
-proc parse_side(s: string): uint16 =
+proc parseSide(s: string): uint16 =
   for i in 0..<10:
     result = result shr 1
     if s[i] == '#':
       result = result or 0x0200
 
-proc parse_tile(lines: seq[string]): (int, Tile) =
+proc parseTile(lines: seq[string]): (int, Tile) =
   let
     idx = parseInt(lines[0].split(" ")[1][0..^2])
     img = lines[1..^1]
 
     # Store borders separately for easier matching.
     sides = [
-      parse_side(img[0]),
-      parse_side(img.mapIt(it[^1]).join("")),
-      parse_side(img[^1]),
-      parse_side(img.mapIt(it[0]).join("")),
+      parseSide(img[0]),
+      parseSide(img.mapIt(it[^1]).join("")),
+      parseSide(img[^1]),
+      parseSide(img.mapIt(it[0]).join("")),
     ]
   return (idx, newTile(img, sides))
 
@@ -113,6 +113,7 @@ proc realizeImg(tile: Tile) =
   tile.rotation = 0
   tile.flipped = false
 
+# Mutates
 iterator orientations(tile: Tile): Tile =
   for _ in 0..<3:
     yield tile
@@ -136,16 +137,16 @@ iterator orientations(image: seq[string]): seq[string] =
     image = rotateImage(image)
   yield image
 
-proc is_vert_adj(upper: Tile, lower: Tile): bool =
+proc isVertAdj(upper: Tile, lower: Tile): bool =
   upper.sides[2] == lower.sides[0]
 
-proc is_horz_adj(left: Tile, right: Tile): bool =
+proc isHorzAdj(left: Tile, right: Tile): bool =
   left.sides[1] == right.sides[3]
 
 ################################################################################
 # Part 1
 
-proc make_image(tiles: TableRef[int, Tile], path: seq[seq[int]]): seq[string] =
+proc makeImage(tiles: TableRef[int, Tile], path: seq[seq[int]]): seq[string] =
   let size = tiles[path[0][0]].img.len
 
   for row in path:
@@ -165,7 +166,7 @@ proc visited(idx: int, path: seq[seq[int]]): bool =
     if idx in p:
       return true
 
-proc get_upper(tiles: TableRef[int, Tile], path: seq[seq[int]]): Option[Tile] =
+proc getUpper(tiles: TableRef[int, Tile], path: seq[seq[int]]): Option[Tile] =
   if path.len == 1:
     return none(Tile)
   elif path[^1].len > 0:
@@ -173,12 +174,12 @@ proc get_upper(tiles: TableRef[int, Tile], path: seq[seq[int]]): Option[Tile] =
   else:
     return some(tiles[path[^2][0]])
 
-proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
+proc scanRight(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln
 
-proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]]): Soln =
+proc scanNextRow(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]]): Soln =
   path.add(newSeq[int]())
   defer: discard path.pop()
-  let upper = get_upper(tiles, path)
+  let upper = getUpper(tiles, path)
 
   # Find possible start of next row.
   for i in tiles.keys:
@@ -187,33 +188,33 @@ proc scan_next_row(tiles: TableRef[int, Tile], size: int, path: var seq[seq[int]
 
     withRestoreTile(tiles[i]):
       for candidate in orientations(tiles[i]):
-        if upper.map((u) => is_vert_adj(u, candidate)) != some(false):
-          let soln = scan_right(tiles, size, i, path)
+        if upper.map((u) => isVertAdj(u, candidate)) != some(false):
+          let soln = scanRight(tiles, size, i, path)
           if soln != NoSoln:
             return soln
 
-proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
+proc scanRight(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[seq[int]]): Soln =
   path[^1].add(idx)
   defer: discard path[^1].pop()
 
   # Row is full.
   if path[^1].len == size:
     if path.len < size:
-      let soln = scan_next_row(tiles, size, path)
+      let soln = scanNextRow(tiles, size, path)
       if soln != NoSoln:
         return soln
     else:
       # Solution
       let
         prod = path[0][0] * path[0][^1] * path[^1][0] * path[^1][^1]
-        img = make_image(tiles, path)
+        img = makeImage(tiles, path)
       return (prod, img)
 
     return NoSoln
 
   let
     cur = tiles[idx]
-    upper = get_upper(tiles, path)
+    upper = getUpper(tiles, path)
 
   # Find next possible tile on the right.
   for i in tiles.keys:
@@ -222,28 +223,28 @@ proc scan_right(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[s
 
     withRestoreTile(tiles[i]):
       for candidate in orientations(tiles[i]):
-        if is_horz_adj(cur, candidate) and (upper.map((u) => is_vert_adj(u, cur)) != some(false)):
-          let soln = scan_right(tiles, size, i, path)
+        if isHorzAdj(cur, candidate) and (upper.map((u) => isVertAdj(u, cur)) != some(false)):
+          let soln = scanRight(tiles, size, i, path)
           if soln != NoSoln:
             return soln
 
 proc part1(tiles: TableRef[int, Tile], size: int): Soln =
   var path = newSeq[seq[int]]()
-  let soln = scan_next_row(tiles, size, path)
+  let soln = scanNextRow(tiles, size, path)
   if soln != NoSoln:
     return soln
 
 ################################################################################
 # Part 2
 
-proc img_hash(raw: seq[string], h, w: int, r, c: int = 0): uint64 =
+proc imgHash(raw: seq[string], h, w: int, r, c: int = 0): uint64 =
   for row in raw[r..<r+h]:
     for pix in row[c..<c+w].items:
       result = result shl 1
       if pix == '#':
         result = result or 1
 
-proc draw_monsters(map: seq[string], coords: seq[(int, int)], monster: seq[string]) =
+proc drawMonsters(map: seq[string], coords: seq[(int, int)], monster: seq[string]) =
   var map = map
   for (dr, dc) in coords:
     for r in 0..<3:
@@ -262,31 +263,31 @@ proc draw_monsters(map: seq[string], coords: seq[(int, int)], monster: seq[strin
     stdout.write("\n")
   resetAttributes(stdout)
 
-proc find_monsters(map: seq[string], monster: seq[string]): int =
-  let monster_mask = img_hash(monster, 3, 20)
+proc findMonsters(map: seq[string], monster: seq[string]): int =
+  let monsterMask = imgHash(monster, 3, 20)
   var coords = newSeq[(int, int)]()
 
   # Sliding window.
   for r in 0..<map.len - 3:
     for c in 0..<map[0].len - 20:
-      if (img_hash(map, 3, 20, r, c) and monster_mask) == monster_mask:
+      if (imgHash(map, 3, 20, r, c) and monsterMask) == monsterMask:
         coords.add((r, c))
 
   if coords.len > 0:
     # For funsies.
-    draw_monsters(map, coords, monster)
+    drawMonsters(map, coords, monster)
     return map.join("").count('#') - coords.len * monster.join("").count('#')
 
 proc part2(image: seq[string], monster: seq[string]): int =
   for img in orientations(image):
-    let roughness = find_monsters(img, monster)
+    let roughness = findMonsters(img, monster)
     if roughness != 0:
       return roughness
 
 ################################################################################
 
-let raw_tiles = toSeq(get_lines().split((l) => l == ""))
-var tiles = newTable(raw_tiles.map(parse_tile))
+let rawTiles = toSeq(getLines().split((l) => l == ""))
+var tiles = newTable(rawTiles.map(parseTile))
 let size = int(sqrt(float(tiles.len)))
 const monster = """
                       # 
