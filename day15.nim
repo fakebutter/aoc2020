@@ -1,30 +1,29 @@
-import utils
-import tables
-import strutils
 import sequtils
+import strutils
+import tables
+import utils
 
 proc run(numbers: seq[int], rounds: int): int =
-  let last_seen = newTable[int, int]()
+  var
+    lastSeen: Table[int, int]
+    lastNum = numbers[^1]
+    turn = numbers.len + 1
 
   for (idx, num) in numbers[0..^2].pairs:
-    last_seen[num] = idx + 1
-
-  var turn = numbers.len + 1
-  var last_num = numbers[^1]
+    lastSeen[num] = idx + 1
 
   while turn <= rounds:
-    var num: int
-    if last_num in last_seen:
-      num = turn - 1 - last_seen[last_num]
+    var num = if lastNum in lastSeen:
+      turn - 1 - lastSeen[lastNum]
     else:
-      num = 0
+      0
 
-    last_seen[last_num] = turn - 1
-    last_num = num
+    lastSeen[lastNum] = turn - 1
+    lastNum = num
     turn += 1
 
-  return last_num
+  return lastNum
 
-let numbers = get_lines()[0].split(",").map(parseInt)
+let numbers = getLines()[0].split(",").map(parseInt)
 echo run(numbers, 2020)
 echo run(numbers, 30000000)

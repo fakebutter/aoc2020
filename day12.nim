@@ -1,39 +1,30 @@
-import utils
-import strutils
 import sequtils
-import tables
 import strformat
+import strutils
+import tables
+import utils
 
 type
   Instr = tuple
     op: char
     val: int
-  Coord = tuple
-    x, y: int
   Ship = ref object
-    pos: Coord
+    pos: V2
     facing: char
-    wp: Coord
+    wp: V2
 
 let degToDir = {0: 'N', 90: 'E', 180: 'S', 270: 'W', -90: 'W', -180: 'S', -270: 'E'}.toTable
 let dirToDeg = {'N': 0, 'S': 180, 'E': 90, 'W': 270}.toTable
 let translation = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}.toTable
 
-proc `+=`(lhs: var Coord, rhs: Coord) =
-  lhs.x += rhs.x
-  lhs.y += rhs.y
-
-proc `*`(lhs: Coord, rhs: int): Coord =
-  (lhs.x * rhs, lhs.y * rhs)
-
 # (0 -1)
 # (1  0)
-proc rotateCw90(c: Coord): Coord =
+proc rotateCw90(c: V2): V2 =
   (-1 * c.y, 1 * c.x)
 
 # (0  1)
 # (-1 0)
-proc rotateCcw90(c: Coord): Coord =
+proc rotateCcw90(c: V2): V2 =
   (1 * c.y, -1 * c.x)
 
 proc newShip(): Ship =
@@ -60,10 +51,10 @@ proc moveToWp(ship: var Ship, dist: int) =
 proc rotateWp(ship: var Ship, deg: int) =
   # I'm clearly very lazy.
   if deg > 0:
-    for i in 0..<int(deg/90):
+    for i in 1..int(deg/90):
       ship.wp = ship.wp.rotateCw90
   else:
-    for i in 0..<int(abs(deg)/90):
+    for i in 1..int(abs(deg)/90):
       ship.wp = ship.wp.rotateCcw90
 
 proc turn(ship: var Ship, deg: int) =
@@ -71,10 +62,12 @@ proc turn(ship: var Ship, deg: int) =
 
 ####################################################################################################
 
-proc parse_instr(line: string): (char, int) =
+proc parseInstr(line: string): (char, int) =
   (line[0], parseInt(line[1..^1]))
 
-proc part1(ship: var Ship, instrs: seq[Instr]): int =
+proc part1(instrs: seq[Instr]): int =
+  var ship = newShip()
+
   for (op, val) in instrs:
     case op:
       of 'N', 'S', 'E', 'W':
@@ -88,7 +81,9 @@ proc part1(ship: var Ship, instrs: seq[Instr]): int =
 
   return abs(ship.pos.x) + abs(ship.pos.y)
 
-proc part2(ship: var Ship, instrs: seq[Instr]): int =
+proc part2(instrs: seq[Instr]): int =
+  var ship = newShip()
+
   for (op, val) in instrs:
     case op:
       of 'N', 'S', 'E', 'W':
@@ -102,8 +97,7 @@ proc part2(ship: var Ship, instrs: seq[Instr]): int =
 
   return abs(ship.pos.x) + abs(ship.pos.y)
 
-let instrs = get_lines().map(parse_instr)
-var ship = newShip()
-echo part1(ship, instrs)
-ship = newShip()
-echo part2(ship, instrs)
+let
+  instrs = getLines().map(parseInstr)
+echo part1(instrs)
+echo part2(instrs)
