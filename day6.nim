@@ -1,26 +1,25 @@
 import sequtils
-import sugar
 import tables
 import utils
 
-iterator part1(groups: seq[seq[string]]): int =
+proc part1(groups: seq[seq[string]]): int =
   for group in groups:
-    var seen: set[char] = {}
+    var seen: set[char]
     for answer in group:
       for c in answer.items:
         seen.incl(c)
 
-    yield seen.len
+    result += seen.len
 
-iterator part2(groups: seq[seq[string]]): int =
+proc part2(groups: seq[seq[string]]): int =
   for group in groups:
-    var counter = newCountTable[char]()
+    var counter: CountTable[char]
     for answer in group:
       for c in answer.items:
         counter.inc(c)
 
-    yield toSeq(counter.values).count(group.len)
+    result += toSeq(counter.values).count(group.len)
 
-let groups = toSeq(get_lines().split((l) => l == ""))
-echo toSeq(part1(groups)).sum
-echo toSeq(part2(groups)).sum
+let groups = getLines().split
+echo part1(groups)
+echo part2(groups)

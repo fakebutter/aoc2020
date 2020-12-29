@@ -22,12 +22,8 @@ proc part1(nums: seq[int]): int =
     history.popFirst()
     history.addLast(num)
 
-proc found(nums: seq[int], start: int, stop: int): int =
-  let sub = nums[start..stop]
-  return min(sub) + max(sub)
-
-proc part2(nums: seq[int], target: int): (int, int) =
-  var sums = newSeq[int]()
+proc findRange(nums: seq[int], target: int): (int, int) =
+  var sums: seq[int]
   for (i, num) in nums.pairs:
     if i == 0:
       sums.add(num)
@@ -40,8 +36,13 @@ proc part2(nums: seq[int], target: int): (int, int) =
       if sums[i] - sums[j] == target:
         return (j, i)
 
-let nums = get_lines().map(parseInt)
-let p1 = part1(nums)
-echo p1
-let (start, stop) = part2(nums, p1)
-echo found(nums, start, stop)
+proc part2(nums: seq[int], magic: int): int =
+  let
+    (start, stop) = findRange(nums, magic)
+    sub = nums[start..stop]
+  return min(sub) + max(sub)
+
+let nums = getLines().map(parseInt)
+let magic = part1(nums)
+echo magic
+echo part2(nums, magic)
