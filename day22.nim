@@ -1,22 +1,19 @@
 import deques
 import math
 import sequtils
-import strutils
 import utils
 
-proc parse_decks(lines: seq[string]): seq[Deque[int]] =
-  lines.split
-    .mapIt(it[1..^1].map(parseInt))
-    .mapIt(it.toDeque)
+proc parseDecks(lines: seq[string]): seq[Deque[int]] =
+  lines.split.mapIt(it[1..^1].toInts.toDeque)
 
-proc score_deck(deck: Deque[int]): int =
+proc scoreDeck(deck: Deque[int]): int =
   for (i, c) in deck.pairs:
     result += (deck.len - i) * c
 
 # Unproven, but seems to work.
-let hash_deck = score_deck
+let hashDeck = scoreDeck
 
-proc clone_decks(decks: seq[Deque[int]], size1: int, size2: int): seq[Deque[int]] =
+proc cloneDecks(decks: seq[Deque[int]], size1: int, size2: int): seq[Deque[int]] =
   @[
     toSeq(decks[0].items)[0..<size1].toDeque,
     toSeq(decks[1].items)[0..<size2].toDeque,
@@ -35,16 +32,14 @@ proc part1(decks: seq[Deque[int]]): int =
     else:
       decks[1].addLast(c2); decks[1].addLast(c1)
 
-  let winner = if decks[0].len > 0: 1 else: 2
-  return score_deck(decks[winner - 1])
+  let winner = if decks[0].len > 0: 0 else: 1
+  return scoreDeck(decks[winner])
 
-proc part2(decks: seq[Deque[int]]): int =
-  var
-    decks = decks
-    history = newSeq[(int, int)]()
+proc play2(decks: var seq[Deque[int]]): int =
+  var history = newSeq[(int, int)]()
 
   while decks[0].len > 0 and decks[1].len > 0:
-    let h = (hash_deck(decks[0]), hash_deck(decks[1]))
+    let h = (hashDeck(decks[0]), hashDeck(decks[1]))
     if h in history:
       return 1
     else:
@@ -61,20 +56,21 @@ proc part2(decks: seq[Deque[int]]): int =
         decks[1].addLast(c2); decks[1].addLast(c1)
     else:
       # Recurse into sub-game.
-      var sub_decks = clone_decks(decks, c1, c2)
-      let sub_winner = part2(sub_decks)
+      var subDecks = cloneDecks(decks, c1, c2)
+      let subWinner = play2(subDecks)
 
-      if sub_winner == 1:
+      if subWinner == 1:
         decks[0].addLast(c1); decks[0].addLast(c2)
       else:
         decks[1].addLast(c2); decks[1].addLast(c1)
 
-  let winner = if decks[0].len > 0: 1 else: 2
-  return score_deck(decks[winner - 1])
+  return if decks[0].len > 0: 1 else: 2
 
-let
-  lines = get_lines()
-  decks = parse_decks(lines)
+proc part2(decks: seq[Deque[int]]): int =
+  var decks = decks
+  let winner = play2(decks)
+  return scoreDeck(decks[winner - 1])
 
+let decks = parseDecks(getLines())
 echo part1(decks)
 echo part2(decks)

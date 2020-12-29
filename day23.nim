@@ -6,6 +6,7 @@ type
   Node = ref object
     value: int
     next: Node
+
   LinkedList = ref object
     head: Node
     tail: Node
@@ -28,11 +29,9 @@ proc append(cups: var LinkedList, value: int) =
 
   if cups.head == nil:
     cups.head = newNode
-    cups.tail = newNode
   else:
     cups.tail.next = newNode
-    cups.tail = newNode
-
+  cups.tail = newNode
   newNode.next = cups.head
 
   cups.lookup[value] = newNode
@@ -64,6 +63,9 @@ proc calcDest(cur: int, taken: seq[int], max: int): int =
   while result in taken:
     result = if result == 1: max else: result - 1
 
+proc concatInts(values: seq[int]): int =
+  values.mapIt($it).join().parseInt
+
 proc part1(cups: seq[int]): int =
   let cupsMax = cups.max
   var
@@ -84,7 +86,7 @@ proc part1(cups: seq[int]): int =
     curIdx = (cups.find(cur) + 1) mod cups.len
 
   var i = (cups.find(1) + 1) mod cups.len
-  return parseInt(cups.cycle(2)[i..<i+cups.len-1].mapIt($it).join())
+  return cups.cycle(2)[i..<i+cups.len-1].concatInts
 
 proc part2(cups: seq[int]): int =
   var cupsList = newLinkedList(1_000_001)
@@ -108,6 +110,6 @@ proc part2(cups: seq[int]): int =
   let node = cupsList[1]
   return node.next.value * node.next.next.value
 
-let input = toSeq(getLines()[0].items).mapIt(parseInt($it))
+let input = toSeq(getLines()[0].items).toInts
 echo part1(input)
 echo part2(input)

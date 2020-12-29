@@ -133,3 +133,6 @@ proc first*[T](s: seq[T]): T =
 
 proc toInts*(strs: openArray[string]): seq[int] =
   strs.map(parseInt)
+
+proc toInts*(strs: openArray[char]): seq[int] =
+  strs.mapIt(ord(it) - ord('0'))

@@ -12,6 +12,9 @@ let Step: Table[string, V2] = {
   "ne": (+5, 10)
 }.toTable
 
+proc tokenize(line: string): seq[string] =
+  line.findAll(re"(e|se|sw|w|nw|ne)")
+
 proc getAdj(coord: V2): seq[V2] =
   toSeq(Step.values).mapIt(coord + it)
 
@@ -28,14 +31,17 @@ proc part1(tiles: var Table[V2, bool], dirs: seq[seq[string]]): int =
 
   return toSeq(tiles.values).count(false)
 
+proc materializeWhites(tiles: var Table[V2, bool]) =
+  for (coord, isWhite) in toSeq(tiles.pairs):
+    if not isWhite:
+      for adj in getAdj(coord):
+        if tiles.getOrDefault(adj, true):
+          tiles[adj] = true
+
 proc part2(tiles: var Table[V2, bool]): int =
   for _ in 1..100:
     # Materialize adjacent white tiles as they may need to be flipped.
-    for (coord, isWhite) in toSeq(tiles.pairs):
-      if not isWhite:
-        for adj in getAdj(coord):
-          if tiles.getOrDefault(adj, true):
-            tiles[adj] = true
+    materializeWhites(tiles)
 
     var toFlip = newSeq[V2]()
 
@@ -54,6 +60,6 @@ proc part2(tiles: var Table[V2, bool]): int =
   return toSeq(tiles.values).count(false)
 
 var tiles: Table[V2, bool]  # true is white tile
-let dirs = get_lines().mapIt(it.findAll(re"(e|se|sw|w|nw|ne)"))
+let dirs = getLines().map(tokenize)
 echo part1(tiles, dirs)
 echo part2(tiles)
