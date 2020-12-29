@@ -16,20 +16,14 @@ proc getAdj(coord: V2): seq[V2] =
   toSeq(Step.values).mapIt(coord + it)
 
 proc countAdj(tiles: var Table[V2, bool], coord: V2): V2 =
-  var whiteCount, blackCount: int
-  for adj in getAdj(coord):
-    let white = tiles.getOrDefault(adj, true)
-    if white:
-      whiteCount += 1
-    else:
-      blackCount += 1
-  return (whiteCount, blackCount)
+  let colors = getAdj(coord).mapIt(tiles.getOrDefault(it, true))
+  return (colors.count(true), colors.count(false))
 
 proc part1(tiles: var Table[V2, bool], dirs: seq[seq[string]]): int =
   for dir in dirs:
     var cur = (0, 0)
     for d in dir:
-      cur = cur + Step[d]
+      cur += Step[d]
     tiles[cur] = not tiles.getOrDefault(cur, true)
 
   return toSeq(tiles.values).count(false)
