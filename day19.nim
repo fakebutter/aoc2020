@@ -3,7 +3,6 @@ import re
 import sequtils
 import sets
 import strutils
-import sugar
 import tables
 import utils
 
@@ -12,7 +11,7 @@ type
     term: string
     nonterms: seq[seq[int]]
 
-proc parse_rules(raw: seq[string]): Table[int, Rule] =
+proc parseRules(raw: seq[string]): Table[int, Rule] =
   for line in raw:
     var rule: Rule
     new(rule)
@@ -23,40 +22,40 @@ proc parse_rules(raw: seq[string]): Table[int, Rule] =
         rule.term = rhs[1..^2]
       else:
         rule.nonterms = newSeq[seq[int]]()
-        for nonterm in rhs.split("|"):
-          let nonterm_parsed = nonterm.strip().split(" ").mapIt(it.strip()).map(parseInt)
-          rule.nonterms.add(nonterm_parsed)
+        for nonTerm in rhs.split("|"):
+          let nontermParsed = nonTerm.strip().split(" ").mapIt(it.strip()).map(parseInt)
+          rule.nonterms.add(nontermParsed)
 
       result[parseInt(idx)] = rule
 
-proc gen_all_poss(rules: Table[int, Rule], idx: int): seq[string] =
+proc genAllPoss(rules: Table[int, Rule], idx: int): seq[string] =
   let rule = rules[idx]
   if rule.term != "":
     return @[rule.term]
 
-  for nonterm in rule.nonterms:
-    case nonterm.len:
+  for nonTerm in rule.nonterms:
+    case nonTerm.len:
       of 1:
-        for poss in gen_all_poss(rules, nonterm[0]):
+        for poss in genAllPoss(rules, nonTerm[0]):
           result.add(poss)
       of 2:
         let
-          poss1 = gen_all_poss(rules, nonterm[0])
-          poss2 = gen_all_poss(rules, nonterm[1])
+          poss1 = genAllPoss(rules, nonTerm[0])
+          poss2 = genAllPoss(rules, nonTerm[1])
         for (x, y) in product(poss1, poss2):
           result.add(x & y)
       of 3:
         let
-          poss1 = gen_all_poss(rules, nonterm[0])
-          poss2 = gen_all_poss(rules, nonterm[1])
-          poss3 = gen_all_poss(rules, nonterm[3])
+          poss1 = genAllPoss(rules, nonTerm[0])
+          poss2 = genAllPoss(rules, nonTerm[1])
+          poss3 = genAllPoss(rules, nonTerm[3])
         for (x, y, z) in product(poss1, poss2, poss3):
           result.add(x & y & z)
       else:
-        assert nonterm.len > 3
+        assert nonTerm.len > 3
 
 proc part1(rules: Table[int, Rule], sentences: seq[string]): int =
-  let poss = gen_all_poss(rules, 0).toHashSet
+  let poss = genAllPoss(rules, 0).toHashSet
 
   for sentence in sentences:
     if sentence in poss:
@@ -64,8 +63,8 @@ proc part1(rules: Table[int, Rule], sentences: seq[string]): int =
 
 proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
   let
-    possHead = gen_all_poss(rules, 42)
-    possTail = gen_all_poss(rules, 31)
+    possHead = genAllPoss(rules, 42)
+    possTail = genAllPoss(rules, 31)
 
   # Assumes no ambiguity, no backtracking.
   let validHead = proc (s: string): (bool, int) =
@@ -84,8 +83,8 @@ proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
     # Looking for: m x 42, n x 42, m x 31
     var
       sentence = sentence
-      has_head = false
-      has_tail = false
+      hasHead = false
+      hasTail = false
 
     # 42 42 ... 31 31
     while true:
@@ -94,7 +93,7 @@ proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
         (vt, tl) = validTail(sentence)
       if vh and vt:
         sentence = sentence[hl..^tl+1]
-        has_tail = true
+        hasTail = true
       else:
         break
 
@@ -103,15 +102,15 @@ proc part2(rules: Table[int, Rule], sentences: seq[string]): int =
       let (vh, hl) = validHead(sentence)
       if vh:
         sentence = sentence[hl..^1]
-        has_head = true
+        hasHead = true
       else:
         break
 
-    if sentence == "" and has_head and has_tail:
+    if sentence == "" and hasHead and hasTail:
       result += 1
 
 let
-  input = toSeq(get_lines().split((l) => l == ""))
-  rules = parse_rules(input[0])
+  input = getLines().split
+  rules = parseRules(input[0])
 echo part1(rules, input[1])
 echo part2(rules, input[1])
