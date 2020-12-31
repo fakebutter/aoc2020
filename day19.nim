@@ -23,7 +23,7 @@ proc parseRules(raw: seq[string]): Table[int, Rule] =
       else:
         rule.nonterms = newSeq[seq[int]]()
         for nonTerm in rhs.split("|"):
-          let nontermParsed = nonTerm.strip().split(" ").mapIt(it.strip()).map(parseInt)
+          let nontermParsed = nonTerm.strip.split.mapIt(it.strip).toInts
           rule.nonterms.add(nontermParsed)
 
       result[parseInt(idx)] = rule

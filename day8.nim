@@ -48,7 +48,9 @@ proc flip(instrs: var seq[Instr], idx: int) =
     of "jmp":
       instrs[idx].opcode = "nop"
 
-proc part2(instrs: var seq[Instr]): (Result, int) =
+proc part2(instrs: seq[Instr]): (Result, int) =
+  var instrs = instrs
+
   for i in 0..<instrs.len:
     flip(instrs, i)
     let res = run(instrs)
@@ -56,6 +58,6 @@ proc part2(instrs: var seq[Instr]): (Result, int) =
       return res
     flip(instrs, i)
 
-var instrs = parse(get_lines())
+let instrs = parse(getLines())
 echo run(instrs)
 echo part2(instrs)

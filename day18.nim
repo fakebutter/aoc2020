@@ -6,7 +6,7 @@ import sugar
 import utils
 
 proc tokenize(line: string): seq[string] =
-  for token in line.split(" "):
+  for token in line.split:
     var token = token
     while token.len > 0:
       if token =~ re"^(\d+|[()+*])":
@@ -53,7 +53,7 @@ proc evalRd(tokens: var seq[string], stack: var seq[int]): int =
 
 proc evalEqn1(eqn: string): int =
   var
-    stack = newSeq[int]()
+    stack: seq[int]
     tokens = reversed(tokenize(eqn))
   return evalRd(tokens, stack)
 
@@ -61,7 +61,7 @@ proc evalEqn1(eqn: string): int =
 # Part 2
 
 proc buildPrn(tokens: var seq[string]): seq[string] =
-  var stack = newSeq[string]()
+  var stack: seq[string]
 
   # Shunting yard
   while tokens.len > 0:
@@ -86,7 +86,7 @@ proc buildPrn(tokens: var seq[string]): seq[string] =
     result.add(stack.pop())
 
 proc evalPrn(tokens: seq[string]): int =
-  var stack = newSeq[string]()
+  var stack: seq[string]
   let popInt = () => parseInt(stack.pop())
 
   for token in tokens:
@@ -99,7 +99,7 @@ proc evalPrn(tokens: seq[string]): int =
   return parseInt(stack.pop())
 
 proc evalEqn2(eqn: string): int =
-  var tokens = reversed(tokenize(eqn))
+  var tokens = tokenize(eqn).reversed
   return evalPrn(buildPrn(tokens))
 
 ################################################################################

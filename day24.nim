@@ -43,7 +43,7 @@ proc part2(tiles: var Table[V2, bool]): int =
     # Materialize adjacent white tiles as they may need to be flipped.
     materializeWhites(tiles)
 
-    var toFlip = newSeq[V2]()
+    var toFlip: seq[V2]
 
     for (coord, isWhite) in tiles.pairs:
       let (_, adjBlack) = countAdj(tiles, coord)

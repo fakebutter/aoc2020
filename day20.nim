@@ -9,15 +9,18 @@ import utils
 
 type
   Sides = array[4, uint16]
+
   Tile = ref object
     rotation: int
     flipped: bool
     img: seq[string]
     sides: Sides
+
   Soln = tuple
     product: int
     img: seq[string]
-let
+
+const
   NoSoln: Soln = (0, @[])
 
 proc newTile(img: seq[string], sides: Sides): Tile =
@@ -42,15 +45,15 @@ proc parseSide(s: string): uint16 =
 
 proc parseTile(lines: seq[string]): (int, Tile) =
   let
-    idx = parseInt(lines[0].split(" ")[1][0..^2])
+    idx = parseInt(lines[0].split[1][0..^2])
     img = lines[1..^1]
 
     # Store borders separately for easier matching.
     sides = [
       parseSide(img[0]),
-      parseSide(img.mapIt(it[^1]).join("")),
+      parseSide(img.mapIt(it[^1]).join),
       parseSide(img[^1]),
-      parseSide(img.mapIt(it[0]).join("")),
+      parseSide(img.mapIt(it[0]).join),
     ]
   return (idx, newTile(img, sides))
 
@@ -229,7 +232,7 @@ proc scanRight(tiles: TableRef[int, Tile], size: int, idx: int, path: var seq[se
             return soln
 
 proc part1(tiles: TableRef[int, Tile], size: int): Soln =
-  var path = newSeq[seq[int]]()
+  var path: seq[seq[int]]
   let soln = scanNextRow(tiles, size, path)
   if soln != NoSoln:
     return soln
@@ -265,7 +268,7 @@ proc drawMonsters(map: seq[string], coords: seq[(int, int)], monster: seq[string
 
 proc findMonsters(map: seq[string], monster: seq[string]): int =
   let monsterMask = imgHash(monster, 3, 20)
-  var coords = newSeq[(int, int)]()
+  var coords: seq[(int, int)]
 
   # Sliding window.
   for r in 0..<map.len - 3:
@@ -276,7 +279,7 @@ proc findMonsters(map: seq[string], monster: seq[string]): int =
   if coords.len > 0:
     # For funsies.
     drawMonsters(map, coords, monster)
-    return map.join("").count('#') - coords.len * monster.join("").count('#')
+    return map.join.count('#') - coords.len * monster.join.count('#')
 
 proc part2(image: seq[string], monster: seq[string]): int =
   for img in orientations(image):

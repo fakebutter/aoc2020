@@ -36,7 +36,7 @@ proc part1(decks: seq[Deque[int]]): int =
   return scoreDeck(decks[winner])
 
 proc play2(decks: var seq[Deque[int]]): int =
-  var history = newSeq[(int, int)]()
+  var history: seq[(int, int)]
 
   while decks[0].len > 0 and decks[1].len > 0:
     let h = (hashDeck(decks[0]), hashDeck(decks[1]))

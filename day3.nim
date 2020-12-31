@@ -10,7 +10,8 @@ proc countTrees(map: seq[seq[char]], step: V2): int =
   while cur.y < height:
     if map[cur.y][cur.x] == '#':
       result += 1
-    cur += step; cur.x = cur.x mod width
+    cur += step
+    cur.x = cur.x mod width
 
 proc run(map: seq[seq[char]], steps: seq[V2]): int =
   steps

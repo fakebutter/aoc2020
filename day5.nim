@@ -24,13 +24,10 @@ proc getSeat(line: string): int =
   return row * 8 + col
 
 proc findGaps(seats: seq[int]): seq[int] =
-  for pair in seats.windowed(2):
+  for pair in seats.pairwise:
     if pair[0] + 1 != pair[1]:
       for i in pair[0]+1..<pair[1]:
         result.add(i)
-
-proc part1(seats: seq[int]): auto =
-  max(seats)
 
 proc part2(seats: seq[int]): int =
   let gaps = findGaps(seats.sorted)
@@ -38,5 +35,5 @@ proc part2(seats: seq[int]): int =
   return gaps.first
 
 let seats = getLines().map(getSeat)
-echo part1(seats)
+echo max(seats)
 echo part2(seats)

@@ -32,9 +32,7 @@ proc isValidField(key: string, value: string): bool =
       return value =~ re"^[0-9]{9}$"
 
 proc validatePassport(validateField: bool, passport: string): bool =
-  var seen = {
-    "byr": false, "iyr": false, "eyr": false, "hgt": false, "hcl": false, "ecl": false, "pid": false
-  }.toTable
+  var seen = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"].mapIt((it, false)).toTable
 
   for entry in passport.split:
     let
@@ -42,12 +40,12 @@ proc validatePassport(validateField: bool, passport: string): bool =
       key = kv[0]
       value = kv[1]
     if key in seen and (not validateField or isValidField(key, value)):
-      seen[kv[0]] = true
+      seen[key] = true
 
   return toSeq(seen.values).count(true) == 7
 
 proc run(passports: seq[string], validator: (string) -> bool): int =
-  passports.countIt(validator(it))
+  passports.count(validator)
 
 let passports = getLines().parsePassports
 echo run(passports, validatePassport.curry(false))

@@ -1,4 +1,3 @@
-import sequtils
 import strutils
 import tables
 import utils
@@ -13,7 +12,7 @@ proc run(numbers: seq[int], rounds: int): int =
     lastSeen[num] = idx + 1
 
   while turn <= rounds:
-    var num = if lastNum in lastSeen:
+    let num = if lastNum in lastSeen:
       turn - 1 - lastSeen[lastNum]
     else:
       0
@@ -24,6 +23,6 @@ proc run(numbers: seq[int], rounds: int): int =
 
   return lastNum
 
-let numbers = getLines()[0].split(",").map(parseInt)
+let numbers = getLines()[0].split(",").toInts
 echo run(numbers, 2020)
 echo run(numbers, 30000000)

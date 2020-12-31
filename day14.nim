@@ -8,28 +8,26 @@ import utils
 type
   Mask1 = tuple
     allow, ones, zeroes: int64
+
   Mask2 = tuple
     ones, floating: int64
 
 proc writeMem1(mem: TableRef[int64, int64], mask: Mask1, address: int, value: int) =
   mem[address] = ((value and mask.allow) or mask.ones) and mask.zeroes
 
+proc forAllPoss(address: int64, mask: Mask2, idx: int, fun: (int64) -> void) =
+  if idx < 0:
+    fun(address or mask.ones)
+    return
+
+  if (mask.floating and (1 shl idx)) > 0:
+    forAllPoss(address or (1 shl idx), mask, idx - 1, fun) # Turn on
+    forAllPoss(address and (not (1 shl idx)), mask, idx - 1, fun) # Turn off
+  else:
+    forAllPoss(address, mask, idx - 1, fun)
+
 proc writeMem2(mem: TableRef[int64, int64], mask: Mask2, address: int, value: int) =
-  proc forAllPoss(address: int64, idx: int, fun: (int64) -> void) =
-    if idx < 0:
-      fun(address)
-      return
-
-    if (mask.floating and (1 shl idx)) > 0:
-      forAllPoss(address or (1 shl idx), idx - 1, fun) # Turn on
-      forAllPoss(address and (not (1 shl idx)), idx - 1, fun) # Turn off
-    else:
-      forAllPoss(address, idx - 1, fun)
-
-  let setMem = proc (address: int64) =
-    mem[address] = value
-
-  forAllPoss((address or mask.ones), 35, setMem)
+  forAllPoss(address, mask, 35, (a: int64) => (mem[a] = value))
 
 proc parseMask1(mask: string): Mask1 =
   result.zeroes = 0xffffffffffffffff
@@ -43,7 +41,7 @@ proc parseMask1(mask: string): Mask1 =
       of '0':
         result.zeroes = result.zeroes and (not (1 shl bit)) # AND mask
       else:
-        assert(false)
+        assert(false, $c)
 
 proc parseMask2(mask: string): Mask2 =
   for (i, c) in mask.pairs:
@@ -56,11 +54,11 @@ proc parseMask2(mask: string): Mask2 =
       of '0':
         discard
       else:
-        assert(false)
+        assert(false, $c)
 
 proc part1(lines: seq[string]): int64 =
   var
-    mask: Mask1 = (0i64, 0i64, 0i64)
+    mask: Mask1
     mem = newTable[int64, int64]()
 
   for line in lines:
@@ -73,7 +71,7 @@ proc part1(lines: seq[string]): int64 =
 
 proc part2(lines: seq[string]): int64 =
   var
-    mask: Mask2 = (0i64, 0i64)
+    mask: Mask2
     mem = newTable[int64, int64]()
 
   for line in lines:

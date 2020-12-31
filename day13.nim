@@ -3,7 +3,7 @@ import sequtils
 import strutils
 import utils
 
-proc egcd(a: int, b: int): (int, int, int) =
+proc eGcd(a: int, b: int): (int, int, int) =
   var
     a = a
     b = b
@@ -27,7 +27,7 @@ proc egcd(a: int, b: int): (int, int, int) =
   return (prevR, x[0], y[0])
   
 proc multInv(a: int, m: int): int =
-  let (_, _, inv) = egcd(m, a)
+  let (_, _, inv) = eGcd(m, a)
   return inv
   
 proc crt(eqns: seq[(int, int)]): int =
@@ -73,7 +73,7 @@ proc part2(buses: seq[int]): int =
 let
   lines = getLines()
   arrival = parseInt(lines[0])
-  buses = lines[1].split(",").mapIt(if it == "x": "0" else: it).map(parseInt)
+  buses = lines[1].split(",").mapIt(if it == "x": "0" else: it).toInts
 
 echo part1(arrival, buses)
 echo part2(buses)

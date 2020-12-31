@@ -1,10 +1,8 @@
 import deques
-import sequtils
-import strutils
 import utils
 
 proc part1(nums: seq[int]): int =
-  var history = initDeque[int]()
+  var history: Deque[int]
   for i in nums[0..<25]:
     history.addLast(i)
 
@@ -22,7 +20,7 @@ proc part1(nums: seq[int]): int =
     history.popFirst()
     history.addLast(num)
 
-proc findRange(nums: seq[int], target: int): (int, int) =
+proc findRange(nums: seq[int], target: int): Pair[int] =
   var sums: seq[int]
   for (i, num) in nums.pairs:
     if i == 0:
@@ -38,11 +36,11 @@ proc findRange(nums: seq[int], target: int): (int, int) =
 
 proc part2(nums: seq[int], magic: int): int =
   let
-    (start, stop) = findRange(nums, magic)
-    sub = nums[start..stop]
+    range = findRange(nums, magic)
+    sub = nums[range.first..range.second]
   return min(sub) + max(sub)
 
-let nums = getLines().map(parseInt)
+let nums = getLines().toInts
 let magic = part1(nums)
 echo magic
 echo part2(nums, magic)

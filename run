@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+if [[ "$1" == "-d" ]]; then
+    shift
+    nim c day$1
+else
+    nim c -d:release day$1
+fi
+time ./day$1 < day$1.in

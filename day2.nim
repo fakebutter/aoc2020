@@ -20,5 +20,5 @@ proc part2IsValid(line: string): bool =
     return (password[i - 1] == character[0]) xor (password[j - 1] == character[0])
 
 let lines = getLines()
-echo lines.countIt(part1IsValid(it))
-echo lines.countIt(part2IsValid(it))
+echo lines.count(part1IsValid)
+echo lines.count(part2IsValid)

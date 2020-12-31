@@ -8,6 +8,7 @@ type
   Instr = tuple
     op: char
     val: int
+
   Ship = ref object
     pos: V2
     facing: char
@@ -22,7 +23,7 @@ let translation = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}.toTable
 proc rotateCw90(c: V2): V2 =
   (-1 * c.y, 1 * c.x)
 
-# (0  1)
+# ( 0 1)
 # (-1 0)
 proc rotateCcw90(c: V2): V2 =
   (1 * c.y, -1 * c.x)
@@ -36,19 +37,19 @@ proc newShip(): Ship =
 proc facingDeg(ship: Ship): int =
   dirToDeg[ship.facing]
 
-proc forward(ship: var Ship, dist: int) =
+proc forward(ship: Ship, dist: int) =
   ship.pos += translation[ship.facing] * dist
 
-proc translate(ship: var Ship, dir: char, dist: int) =
+proc translate(ship: Ship, dir: char, dist: int) =
   ship.pos += translation[dir] * dist
 
-proc translateWp(ship: var Ship, dir: char, dist: int) =
+proc translateWp(ship: Ship, dir: char, dist: int) =
   ship.wp += translation[dir] * dist
 
-proc moveToWp(ship: var Ship, dist: int) =
+proc moveToWp(ship: Ship, dist: int) =
   ship.pos += ship.wp * dist
 
-proc rotateWp(ship: var Ship, deg: int) =
+proc rotateWp(ship: Ship, deg: int) =
   # I'm clearly very lazy.
   if deg > 0:
     for i in 1..int(deg/90):
@@ -57,7 +58,7 @@ proc rotateWp(ship: var Ship, deg: int) =
     for i in 1..int(abs(deg)/90):
       ship.wp = ship.wp.rotateCcw90
 
-proc turn(ship: var Ship, deg: int) =
+proc turn(ship: Ship, deg: int) =
   ship.facing = degToDir[(ship.facingDeg + deg) mod 360]
 
 ####################################################################################################
@@ -97,7 +98,6 @@ proc part2(instrs: seq[Instr]): int =
 
   return abs(ship.pos.x) + abs(ship.pos.y)
 
-let
-  instrs = getLines().map(parseInstr)
+let instrs = getLines().map(parseInstr)
 echo part1(instrs)
 echo part2(instrs)

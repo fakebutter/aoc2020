@@ -24,7 +24,7 @@ proc newLinkedList(size: int): LinkedList =
 proc `[]`(cups: LinkedList, value: int): Node =
   cups.lookup[value]
 
-proc append(cups: var LinkedList, value: int) =
+proc append(cups: LinkedList, value: int) =
   var newNode = newNode(value)
 
   if cups.head == nil:
@@ -37,7 +37,7 @@ proc append(cups: var LinkedList, value: int) =
   cups.lookup[value] = newNode
   cups.max = max(cups.max, value)
 
-proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
+proc insertAfter(cups: LinkedList, node: Node, values: seq[int]) =
   var
     cur = node
     rest = cur.next
@@ -49,7 +49,7 @@ proc insertAfter(cups: var LinkedList, node: Node, values: seq[int]) =
 
   cur.next = rest
 
-proc extractAfter(cups: var LinkedList, node: Node, size: int): seq[int] =
+proc extractAfter(cups: LinkedList, node: Node, size: int): seq[int] =
   var cur = node.next
 
   for _ in 1..size:
@@ -64,7 +64,7 @@ proc calcDest(cur: int, taken: seq[int], max: int): int =
     result = if result == 1: max else: result - 1
 
 proc concatInts(values: seq[int]): int =
-  values.mapIt($it).join().parseInt
+  values.mapIt($it).join.parseInt
 
 proc part1(cups: seq[int]): int =
   let cupsMax = cups.max

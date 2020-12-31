@@ -10,14 +10,14 @@ type
 
 const Adj = [
     (-1, -1), (0, -1), (1, -1),
-    (-1, 0), (1, 0),
-    (-1, 1), (0, 1), (1, 1)
+    (-1,  0),          (1,  0),
+    (-1,  1), (0,  1), (1,  1)
   ]
 
 proc `[]`(map: Map, pos: V2): char =
   map.raw[pos.y][pos.x]
 
-proc `[]=`(map: var Map, pos: V2, seat: char) =
+proc `[]=`(map: Map, pos: V2, seat: char) =
   map.raw[pos.y][pos.x] = seat
 
 proc count(map: Map, c: char): int =
@@ -26,15 +26,14 @@ proc count(map: Map, c: char): int =
     .count(true)
 
 proc valid(map: Map, pos: V2): bool =
-  pos.y >= 0 and pos.y < map.height and
-    pos.x >= 0 and pos.x < map.width
+  (pos.y >= 0 and pos.y < map.height) and (pos.x >= 0 and pos.x < map.width)
 
 iterator iter(map: Map): (V2, char) =
   for (r, row) in map.raw.pairs:
     for (c, seat) in row.pairs:
       yield ((c, r), seat)
 
-proc sig(map: var Map): seq[V2] =
+proc sig(map: Map): seq[V2] =
   for (pos, seat) in map.iter:
     if seat == '#':
       result.add(pos)
@@ -88,7 +87,7 @@ proc canVacate2(map: Map, pos: V2): bool =
 type
   SeatPred = (m: Map, s: V2) -> bool
 
-proc step(map: var Map, canOccupy: SeatPred, canVacate: SeatPred): bool =
+proc step(map: Map, canOccupy: SeatPred, canVacate: SeatPred): bool =
   var toOccupy, toVacate: seq[V2]
   let sigBefore = map.sig
 

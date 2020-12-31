@@ -1,16 +1,17 @@
 import algorithm
 import sequtils
-import strutils
 import utils
 
 proc part1(jolts: seq[int]): int =
   var
+    jolts = @[0] & jolts.sorted & @[jolts.max + 3]
     diff1, diff3 = 0
-    jolts = sorted(jolts) & @[max(jolts) + 3]
 
   for (idx, jolt) in jolts.pairs:
-    let prev = if idx == 0: 0 else: jolts[idx - 1]
+    if idx == 0:
+      continue
 
+    let prev = jolts[idx - 1]
     if jolt - prev == 1:
       diff1 += 1
     else:
@@ -20,7 +21,7 @@ proc part1(jolts: seq[int]): int =
 
 proc part2(jolts: seq[int]): int =
   var
-    jolts = @[0] & sorted(jolts) & @[max(jolts) + 3]
+    jolts = @[0] & jolts.sorted & @[jolts.max + 3]
     total = repeat(0, jolts.len - 1) & @[1]
 
   var i = jolts.len - 2
@@ -38,6 +39,6 @@ proc part2(jolts: seq[int]): int =
 
   return total[0]
 
-let jolts = getLines().map(parseInt)
+let jolts = getLines().toInts
 echo part1(jolts)
 echo part2(jolts)

@@ -6,6 +6,9 @@ import strutils
 import sugar
 import tables
 
+################################################################################
+# Types
+
 type
   Pair*[T] = tuple
     first, second: T
@@ -26,7 +29,10 @@ proc `+=`*(lhs: var V2, rhs: V2) =
 proc `*`*(lhs: V2, rhs: int): V2 =
   (lhs.x * rhs, lhs.y * rhs)
 
-proc getLines*(): seq[string] =
+################################################################################
+# IO
+
+proc getLines*: seq[string] =
   var line: string
   while readLine(stdin, line):
     result.add(line)
@@ -34,10 +40,34 @@ proc getLines*(): seq[string] =
 proc to2dArr*(lines: seq[string]): seq[seq[char]] =
   lines.mapIt(toSeq it.items)
 
-iterator split*[T](items: seq[T], is_delim: (T) -> bool): seq[T] =
+################################################################################
+# Collections
+
+proc gcd*(a: int, b: int): int =
+  if b == 0:
+    return a
+  return gcd(b, a mod b)
+
+proc one*[T](hs: HashSet[T]): T =
+  for item in hs.items:
+    return item
+
+proc first*[T](s: openArray[T]): T =
+  s[0]
+
+proc toInts*(strs: openArray[string]): seq[int] =
+  strs.map(parseInt)
+
+proc toInts*(strs: openArray[char]): seq[int] =
+  strs.mapIt(ord(it) - ord('0'))
+
+proc count*[T](items: openArray[T], pred: (v: T) -> bool): int =
+  items.countIt(pred(it))
+
+iterator split*[T](items: seq[T], isDelim: (T) -> bool): seq[T] =
   var cur = newSeq[T]()
   for item in items:
-    if is_delim(item):
+    if isDelim(item):
       if cur.len > 0:
         yield cur
         cur = @[]
@@ -48,15 +78,13 @@ iterator split*[T](items: seq[T], is_delim: (T) -> bool): seq[T] =
     yield cur
 
 proc split*(lines: seq[string]): seq[seq[string]] =
-  toSeq split(lines, (l) => l == "")
+  toSeq lines.split((l) => l == "")
 
 proc sum*[T](items: seq[T]): T =
   items.foldl(a + b)
 
 proc product*[T](items: seq[T]): T =
   items.foldl(a * b)
-
-proc identity*[T](v: T): T = v
 
 proc none*[T](items: seq[T]): bool =
   for i in items:
@@ -88,15 +116,20 @@ proc del*[A,B](table: var Table[A,B], keys: openArray[A]) =
   for k in keys:
     table.del(k)
 
-template deleteItems*[T](s: var seq[T], ds: untyped) =
+template delItems*[T](s: var seq[T], ds: untyped) =
   s.keepItIf(it notin ds)
+
+proc flatMap*[T, S](items: seq[T], fun: (T) -> seq[S]): seq[S] =
+  items.map(fun).concat
+
+################################################################################
+# Miscellaneous
+
+proc identity*[T](v: T): T = v
 
 macro cmpByIdx*(idx: static[int]): untyped =
   result = quote do:
     (a, b) => (if a[`idx`] < b[`idx`]: -1 else: 1)
-
-proc flatMap*[T, S](items: seq[T], fun: (T) -> seq[S]): seq[S] =
-  items.map(fun).concat
 
 # https://github.com/Araq/metapar/blob/master/livedemo/curry.nim
 macro curry*(f: typed; args: varargs[untyped]): untyped =
@@ -118,21 +151,3 @@ macro curry*(f: typed; args: varargs[untyped]): untyped =
     params.add newIdentDefs(param, ty[i+2+args.len])
     callExpr.add param
   result = newProc(procType = nnkLambda, params = params, body = callExpr)
-
-proc gcd*(a: int, b: int): int =
-  if b == 0:
-    return a
-  return gcd(b, a mod b)
-
-proc first*[T](hs: HashSet[T]): T =
-  for item in hs.items:
-    return item
-
-proc first*[T](s: seq[T]): T =
-  s[0]
-
-proc toInts*(strs: openArray[string]): seq[int] =
-  strs.map(parseInt)
-
-proc toInts*(strs: openArray[char]): seq[int] =
-  strs.mapIt(ord(it) - ord('0'))

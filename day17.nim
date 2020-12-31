@@ -35,9 +35,9 @@ proc countActiveNeighbors(pocket: var HashSet[V4], pos: V4, dim: int): int =
 
 proc step(pocket: var HashSet[V4], dim: int) =
   var
-    activated = newSeq[V4]()
-    deactivated = newSeq[V4]()
-    shaded = initCountTable[V4]()
+    activated: seq[V4]
+    deactivated: seq[V4]
+    shaded: CountTable[V4]
 
   for pos in pocket.items:
     # Turn on
@@ -53,8 +53,8 @@ proc step(pocket: var HashSet[V4], dim: int) =
     if (pos notin pocket) and count == 3:
       activated.add(pos)
 
-  pocket.incl(toHashSet(activated))
-  pocket.excl(toHashSet(deactivated))
+  pocket.incl(activated.toHashSet)
+  pocket.excl(deactivated.toHashSet)
 
 proc run(pocket: HashSet[V4], dim: int): int =
   var pocket = pocket
@@ -62,7 +62,6 @@ proc run(pocket: HashSet[V4], dim: int): int =
     step(pocket, dim)
   return pocket.len
 
-let
-  pocket = makePocket(getLines())
+let pocket = makePocket(getLines())
 echo run(pocket, 3)
 echo run(pocket, 4)

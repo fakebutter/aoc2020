@@ -13,7 +13,7 @@ type
 proc parse(lines: seq[string]): seq[Recipe] =
   for line in lines:
     if line =~ re"^(.*) \(contains (.*)\)$":
-      result.add((matches[0].split(" "), matches[1].split(", ")))
+      result.add((matches[0].split, matches[1].split(", ")))
 
 proc prune(candidates: TableRef[string, HashSet[string]], toPrune: seq[(string, string)]) =
   let
@@ -34,7 +34,7 @@ proc solve(recipes: seq[Recipe]): Table[string, string] =
       candidates[allergen] = candidates.getOrDefault(allergen, ingSet) * ingSet
 
   while true:
-    var toPrune = newSeq[(string, string)]()
+    var toPrune: seq[(string, string)]
 
     # Solve for allergens with only one candidate ingredient left.
     for (allergen, ingredients) in candidates.pairs:
@@ -50,10 +50,10 @@ proc solve(recipes: seq[Recipe]): Table[string, string] =
 
 proc part1(recipes: seq[Recipe], solution: Table[string, string]): int =
   let
-    allIngredients = recipes.mapIt(it[0]).concat
+    allIngredients = recipes.flatMap((r) => r[0])
     safeIngredients = allIngredients.toHashSet - toSeq(solution.values).toHashSet
 
-  var freq = newCountTable[string]()
+  var freq: CountTable[string]
   for ingredient in allIngredients:
     if ingredient in safeIngredients:
       freq.inc(ingredient)

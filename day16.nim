@@ -10,6 +10,7 @@ type
   Rule = tuple
     field: string
     range1, range2: Pair[int]
+
   Ticket = seq[int]
 
 proc parseRule(rule: string): Rule =
@@ -21,7 +22,7 @@ proc parseRule(rule: string): Rule =
     )
 
 proc parseTicket(ticket: string): Ticket =
-  ticket.split(",").map(parseInt)
+  ticket.split(",").toInts
 
 proc match(rule: Rule, value: int): bool =
   (rule.range1.first <= value and value <= rule.range1.second) or
@@ -46,7 +47,7 @@ proc findSolvedField(possibleFields: Table[int, HashSet[string]]): (int, string)
   # Find field with only one matching rule remaining.
   for (idx, fields) in possibleFields.pairs:
     if fields.len == 1:
-      return (idx, fields.first)
+      return (idx, fields.one)
   assert false
 
 proc solve(possibleFields: Table[int, HashSet[string]]): Table[int, string] =
